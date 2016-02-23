@@ -3,21 +3,35 @@ var httpListenerPort = 80;
 
 ///// includes /////
 var express = require('express')
+var cookieParser = require('cookie-parser')
 var util = require('util')
 var logger = require('./logger')
+var secureConfig = require('./secure')
 
 ///// objects /////
 var httpListener = express()
 
 ///// http handler /////
+
+// use cookieParser middleware
+httpListener.use(cookieParser(secureConfig.cookieSecret)) 
+
+// cookie handleing and access logging
 httpListener.use(function (req, res, next) {
-	logger.visitor(req.url, req.method, req.headers)
+	if (req.signedCookies.sid === undefined) {
+		// set a new cookie
+		var random = Math.random().toString(36).substring(2) + Date.now().toString(36)
+    	res.cookie('sid', random, { maxAge: 31536000, httpOnly: true, signed: true } )
+    }
+	logger.visitor(req.url, req.method, req.signedCookies, req.headers)
 	next()
 });
 
+// admin panel
 var visit = require('./visit');
 httpListener.use('/visit', visit);
 
+// all other paths
 httpListener.use('/', function (req, res) {	
 	res.send('Hello World!')
 });
@@ -34,5 +48,4 @@ function startHttpListener() {
 		startHttpListener()
 	});
 }
-
 startHttpListener()

@@ -9,8 +9,9 @@ router.get('/', function(req, res) {
 		+ ']' )
 	var response = ''
 	visits.forEach(function(entry) {
-    	response += entry.url + ' ' + 
+    	response += entry.url + ' ' +
     		entry.method + ' ' +
+    		entry.cookie + ' ' +
     		util.inspect(entry.headers) + '<br>'
 	})
 	res.send(response)
