@@ -10,8 +10,15 @@ var logger = require('./logger')
 var httpListener = express()
 
 ///// http handler /////
-httpListener.get('/', function (req, res) {
+httpListener.use(function (req, res, next) {
 	logger.visitor(req.url, req.method, req.headers)
+	next()
+});
+
+var visit = require('./visit');
+httpListener.use('/visit', visit);
+
+httpListener.use('/', function (req, res) {	
 	res.send('Hello World!')
 });
 
