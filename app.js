@@ -12,6 +12,17 @@ httpListener.get('/', function (req, res) {
 	res.send('Hello World!')
 });
 
-httpListener.listen(httpListenerPort, function () {
-	console.log('http handler listening on port '+httpListenerPort)
-});
+function startHttpListener() {
+	httpListener.listen(httpListenerPort, function () {
+		console.log('http handler listening on port '+httpListenerPort)
+	}).on('error', function (err) {
+		console.log('counld not start http handler on port '+httpListenerPort)
+		if(httpListenerPort == 80)
+			httpListenerPort = 8080
+		else
+			httpListenerPort++
+		startHttpListener()
+	});
+}
+
+startHttpListener()
