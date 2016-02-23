@@ -3,12 +3,15 @@ var httpListenerPort = 80;
 
 ///// includes /////
 var express = require('express')
+var util = require('util')
+var logger = require('./logger')
 
 ///// objects /////
 var httpListener = express()
 
 ///// http handler /////
 httpListener.get('/', function (req, res) {
+	logger.visitor(req.url, req.method, req.headers)
 	res.send('Hello World!')
 });
 
