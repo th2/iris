@@ -1,5 +1,5 @@
 ///// config /////
-var httpListenerPort = 80;
+var httpListenerPort = 80
 
 ///// includes /////
 var express = require('express')
@@ -13,10 +13,8 @@ var httpListener = express()
 
 ///// http handler /////
 
-// use cookieParser middleware
+// cookie handling and access logging
 httpListener.use(cookieParser(secureConfig.cookieSecret)) 
-
-// cookie handleing and access logging
 httpListener.use(function (req, res, next) {
 	if (req.signedCookies.sid === undefined) {
 		// set a new cookie
@@ -25,27 +23,27 @@ httpListener.use(function (req, res, next) {
     }
 	logger.visitor(req.url, req.method, req.signedCookies, req.headers)
 	next()
-});
+})
 
 // admin panel
-var visit = require('./visit');
-httpListener.use('/visit', visit);
+var visit = require('./visit')
+httpListener.use('/visit', visit)
 
 // all other paths
 httpListener.use('/', function (req, res) {	
 	res.send('Hello World!')
-});
+})
 
 function startHttpListener() {
 	httpListener.listen(httpListenerPort, function () {
-		console.log('http handler listening on port '+httpListenerPort)
+		console.log('http handler listening on port ' + httpListenerPort)
 	}).on('error', function (err) {
-		console.log('counld not start http handler on port '+httpListenerPort)
+		console.log('counld not start http handler on port ' + httpListenerPort)
 		if(httpListenerPort == 80)
 			httpListenerPort = 8080
 		else
 			httpListenerPort++
 		startHttpListener()
-	});
+	})
 }
 startHttpListener()
