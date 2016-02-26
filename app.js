@@ -4,6 +4,7 @@ var httpListenerPort = 80
 ///// includes /////
 var express = require('express')
 var cookieParser = require('cookie-parser')
+var bodyParser = require('body-parser')
 var util = require('util')
 var logger = require('./logger')
 var secureConfig = require('./secure')
@@ -14,7 +15,8 @@ var httpListener = express()
 ///// http handler /////
 
 // cookie handling and access logging
-httpListener.use(cookieParser(secureConfig.cookieSecret)) 
+httpListener.use(cookieParser(secureConfig.cookieSecret))
+httpListener.use(bodyParser())
 httpListener.use(function (req, res, next) {
 	if (req.signedCookies.sid === undefined) {
 		// set a new cookie

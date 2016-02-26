@@ -2,6 +2,7 @@ var express = require('express')
 var router = express.Router()
 var fs = require('fs')
 var util = require('util')
+var secureConfig = require('./secure')
 
 var authorized = []
 
@@ -19,20 +20,15 @@ Array.prototype.contains = function(obj) {
 router.use(function (req, res, next) {
 	if (authorized.contains(req.signedCookies.sid)) {
 		next()
-	} else if(req.body.pw === 'test') {
+	} else if(req.body.adminpw === secureConfig.adminPassword) {
 		authorized.push(req.signedCookies.sid)
 		next()
 	} else {
-		res.send(util.inspect(req.body) +
-			'<form method="post" action="'+req.baseUrl+req.url+'">' +
-			'<input type="password" name="pw">' +
+		res.send('<form method="post" action="'+req.baseUrl+req.url+'">' +
+			'<input type="password" name="adminpw">' +
 			'<input type="submit" value="Submit">' +
 			'</form>')
     }
-})
-
-router.post('/', function(req, res) {
-	console.log('post')
 })
 
 router.get('/', function(req, res) {
