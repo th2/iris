@@ -5,6 +5,8 @@ var util = require('util')
 var secureConfig = require('./secure')
 
 var authorized = []
+var invalidLoginAttempts = 0
+var lastLoginAttempt = 0
 
 Array.prototype.contains = function(obj) {
     var i = this.length;
@@ -20,14 +22,27 @@ Array.prototype.contains = function(obj) {
 router.use(function (req, res, next) {
 	if (authorized.contains(req.signedCookies.sid)) {
 		next()
+	} else if(10000 * invalidLoginAttempts + lastLoginAttempt > new Date().getTime()) {
+		res.send('wait for ' + 
+			Math.floor((10000 * invalidLoginAttempts + lastLoginAttempt - new Date().getTime())/1000)
+			+ ' seconds')
 	} else if(req.body.adminpw === secureConfig.adminPassword) {
 		authorized.push(req.signedCookies.sid)
+		invalidLoginAttempts = 0
 		next()
 	} else {
-		res.send('<form method="post" action="'+req.baseUrl+req.url+'">' +
-			'<input type="password" name="adminpw">' +
-			'<input type="submit" value="Submit">' +
-			'</form>')
+		var response = ''
+		if(req.body.adminpw && req.body.adminpw.length > 0) {
+			response += 'wrong password'
+			invalidLoginAttempts++
+			lastLoginAttempt = new Date().getTime()
+		} else {
+			response += '<form method="post" action="'+req.baseUrl+req.url+'">' +
+				'<input type="password" name="adminpw">' +
+				'<input type="submit" value="Submit">' +
+				'</form>'
+		}
+		res.send(response)
     }
 })
 
