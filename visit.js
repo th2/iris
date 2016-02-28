@@ -23,9 +23,15 @@ router.use(function (req, res, next) {
 	if (authorized.contains(req.signedCookies.sid)) {
 		next()
 	} else if(10000 * invalidLoginAttempts + lastLoginAttempt > new Date().getTime()) {
-		res.send('wait for ' + 
-			Math.floor((10000 * invalidLoginAttempts + lastLoginAttempt - new Date().getTime())/1000)
-			+ ' seconds')
+		res.send('<script>' + 
+				'function startTimer(duration, display) { setInterval(function () { display.textContent = --duration }, 1000) }' + 
+				'window.onload = function () { startTimer(' +
+				Math.floor((10000 * invalidLoginAttempts + lastLoginAttempt - new Date().getTime())/1000) +
+				', document.querySelector("#time")) }' + 
+				'</script>' + 
+				'wait for <span id="time">' + 
+				Math.floor((10000 * invalidLoginAttempts + lastLoginAttempt - new Date().getTime())/1000) +
+				'</span> seconds')
 	} else if(req.body.adminpw === secureConfig.adminPassword) {
 		authorized.push(req.signedCookies.sid)
 		invalidLoginAttempts = 0
