@@ -28,8 +28,8 @@ httpListener.use(function (req, res, next) {
 })
 
 // admin panel
-var visit = require('./visit')
-httpListener.use('/visit', visit)
+var visit = require('./admin/visit')
+httpListener.use('/admin', visit)
 
 // all other paths
 httpListener.use('/', function (req, res) {

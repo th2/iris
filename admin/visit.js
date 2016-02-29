@@ -2,7 +2,7 @@ var express = require('express')
 var router = express.Router()
 var fs = require('fs')
 var util = require('util')
-var secureConfig = require('./secure')
+var secureConfig = require('../secure')
 
 var authorized = []
 var invalidLoginAttempts = 0
