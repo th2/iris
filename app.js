@@ -1,19 +1,24 @@
 // config
 var httpListenerPort = 80
+// TODO: use protocol version
+// var protocolVersion = 1
 
 // includes
+var http = require('http')
 var express = require('express')
 var cookieParser = require('cookie-parser')
 var bodyParser = require('body-parser')
+var NodeRSA = require('node-rsa')
 var util = require('util')
 var logger = require('./logger')
 var secureConfig = require('./secure')
+var knownHosts = require('./hosts')
 
 // objects
 var httpListener = express()
+var rsaKey = new NodeRSA(secureConfig.privateKey)
 
-// http handler
-
+// [http handler]
 // cookie handling and access logging
 httpListener.use(cookieParser(secureConfig.cookieSecret))
 httpListener.use(bodyParser())
@@ -27,6 +32,10 @@ httpListener.use(function (req, res, next) {
   next()
 })
 
+// internal communication
+var network = require('./network')
+httpListener.use('/network', network)
+
 // admin panel
 var visit = require('./admin/visit')
 httpListener.use('/admin', visit)
@@ -36,9 +45,17 @@ httpListener.use('/', function (req, res) {
   res.send('Hello World!')
 })
 
-function startHttpListener () {
+function startHttpListener (callback) {
   httpListener.listen(httpListenerPort, function () {
     console.log('http handler listening on port ' + httpListenerPort)
+
+    // TODO: remove test config:
+    if (httpListenerPort === 8081) {
+      var secureConfig1 = require('./secure1')
+      rsaKey = new NodeRSA(secureConfig1.privateKey)
+    }
+
+    callback()
   }).on('error', function (err) {
     if (err.errno === 'EACCES') {
       console.log('counld not start http handler on port ' + httpListenerPort)
@@ -54,4 +71,20 @@ function startHttpListener () {
   })
 }
 
-startHttpListener()
+function connectNetwork () {
+  knownHosts.forEach(function (node) {
+    http.request({ host: node.host + ':' + node.port, path: '/network' }, function (response) {
+      var page = ''
+
+      response.on('data', function (chunk) {
+        page += chunk
+      })
+
+      response.on('end', function () {
+        console.log(page)
+      })
+    }).end()
+  })
+}
+
+startHttpListener(connectNetwork())

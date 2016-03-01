@@ -1,0 +1,16 @@
+[
+	{
+		"host": "localhost",
+		"port": 8080,
+		"publicKey": "-----BEGIN PUBLIC KEY-----MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtZmAUFM7M5kQ3k5X7cIGyVY39k4Q45WXgIUa05QB0iAKuw+g/4o5uWB820v6SnFsst+dY0oWe7zY7HPV3vfojscREoZA3MzibcGiEwc7ODl692vaUqJq5qNV/7znbqu4G/sV+pTDOeahNmp2hOoheIxjqZ+V7yEob3Ixqfd6qYWCbWIKvBmh6DvS8YAU4bO2dKuPRMvB9pWOFT0AuK451uEIm4X+1CHeFhh/jAcVbryovOa3B3okYgrmIMPZprQ2lqaylr/yoEpwjNi4Q2/ZV6RNwWtK6J4CMiRn6kGc8MefLkdQ5wDr9Y81vBc9uyyFpr5+tVSKHRrD36duIdIRHwIDAQAB-----END PUBLIC KEY-----",
+		"connected": false,
+		"online": true
+	},
+	{
+		"host": "localhost",
+		"port": 8081,
+		"publicKey": "-----BEGIN PUBLIC KEY-----MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAgqCSZc+PJ1TPjzqFBt5R/UwT1e28V7c8DoJjSuVx98Jf+GprNZ9N3667dUmYb9vonm2WV1R4Z2bbCgGPnPwPqB8ziARPRLEZQEah3MJtx+ZoJN3HCOlJ9+HON1gRN30d81Tmz+CIzCAXQi2J3POI6sd1//IVmUS389HMa+HuMebH/gHEx+AyGSWYVR020iffSStsV5kQUaeGmo0Khcr+0KW2RDJT8raJQN7QuVM8eAETz2+aLXm4EPLqqD6usoNH/TgvvtrP5DAu2CydbcdBP9wIXw3CHTCIcnGoLR43jT8sn5iYft7bZEst83W5K7dt9yoJDHeRB3lGuiJnYylkVwIDAQAB-----END PUBLIC KEY-----",
+		"connected": false,
+		"online": true	
+	}
+]
