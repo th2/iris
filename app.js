@@ -8,7 +8,7 @@ var http = require('http')
 var express = require('express')
 var cookieParser = require('cookie-parser')
 var bodyParser = require('body-parser')
-var NodeRSA = require('node-rsa')
+var ursa = require('ursa')
 var util = require('util')
 var logger = require('./logger')
 var secureConfig = require('./secure')
@@ -16,7 +16,7 @@ var knownHosts = require('./hosts')
 
 // objects
 var httpListener = express()
-var rsaKey = new NodeRSA(secureConfig.privateKey)
+var rsaKey = ursa.createPrivateKey(secureConfig.privateKey)
 
 // [http handler]
 // cookie handling and access logging
@@ -52,7 +52,7 @@ function startHttpListener (callback) {
     // TODO: remove test config:
     if (httpListenerPort === 8081) {
       var secureConfig1 = require('./secure1')
-      rsaKey = new NodeRSA(secureConfig1.privateKey)
+      rsaKey = ursa.createPrivateKey(secureConfig1.privateKey)
     }
 
     callback()
