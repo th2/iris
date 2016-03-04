@@ -8,7 +8,6 @@ var http = require('http')
 var express = require('express')
 var cookieParser = require('cookie-parser')
 var bodyParser = require('body-parser')
-var ursa = require('ursa')
 var util = require('util')
 var logger = require('./logger')
 var secureConfig = require('./secure')
@@ -16,7 +15,6 @@ var knownHosts = require('./hosts')
 
 // objects
 var httpListener = express()
-var rsaKey = ursa.createPrivateKey(secureConfig.privateKey)
 
 // [http handler]
 // cookie handling and access logging
@@ -48,13 +46,6 @@ httpListener.use('/', function (req, res) {
 function startHttpListener (callback) {
   httpListener.listen(httpListenerPort, function () {
     console.log('http handler listening on port ' + httpListenerPort)
-
-    // TODO: remove test config:
-    if (httpListenerPort === 8081) {
-      var secureConfig1 = require('./secure1')
-      rsaKey = ursa.createPrivateKey(secureConfig1.privateKey)
-    }
-
     callback()
   }).on('error', function (err) {
     if (err.errno === 'EACCES') {
@@ -64,7 +55,7 @@ function startHttpListener (callback) {
       } else {
         httpListenerPort++
       }
-      startHttpListener()
+      startHttpListener(callback)
     } else {
       console.log(util.inspect(err))
     }
@@ -73,7 +64,7 @@ function startHttpListener (callback) {
 
 function connectNetwork () {
   knownHosts.forEach(function (node) {
-    http.request({ host: node.host + ':' + node.port, path: '/network' }, function (response) {
+    var request = http.request({ host: node.host + ':' + node.port, path: '/network' }, function (response) {
       var page = ''
 
       response.on('data', function (chunk) {
@@ -81,10 +72,21 @@ function connectNetwork () {
       })
 
       response.on('end', function () {
-        console.log(page)
+        if (page === 'ok') {
+          node.connected = true
+        } else {
+          console.log('unexpected reply ' + page)
+        }
       })
-    }).end()
+    })
+    request.on('error', function (err) {
+      if(err.errno === 'ENOTFOUND')
+        node.online = false
+      else
+        console.log(err)
+    })
+    request.end()
   })
 }
 
-startHttpListener(connectNetwork())
+startHttpListener(connectNetwork)
