@@ -13,7 +13,14 @@ logger.visitor = function (url, method, cookie, headers) {
   visit.cookie = cookie
   visit.headers = headers
 
-  fs.appendFile('log/' + new Date().toISOString().slice(0, 10) + '.txt', JSON.stringify(visit) + ',', function (err) {
+  fs.appendFile('log/visit/' + new Date().toISOString().slice(0, 10) + '.json', JSON.stringify(visit) + ',', function (err) {
+    if (err) throw err
+  })
+}
+
+logger.error = function (err) {
+  console.log(err)
+  fs.appendFile('log/error/' + new Date().toISOString().slice(0, 10) + '.json', JSON.stringify(err) + ',', function (err) {
     if (err) throw err
   })
 }

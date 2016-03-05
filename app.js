@@ -57,7 +57,7 @@ function startHttpListener (callback) {
       }
       startHttpListener(callback)
     } else {
-      console.log(util.inspect(err))
+      logger.error(err)
     }
   })
 }
@@ -83,7 +83,7 @@ function connectNetwork () {
       if(err.errno === 'ENOTFOUND')
         node.online = false
       else
-        console.log(err)
+        logger.error(err)
     })
     request.end()
   })
