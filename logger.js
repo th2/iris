@@ -19,8 +19,9 @@ logger.visitor = function (url, method, cookie, headers) {
 }
 
 logger.error = function (err) {
-  console.log(err)
-  fs.appendFile('log/error/' + new Date().toISOString().slice(0, 10) + '.json', JSON.stringify(err) + ',', function (err) {
+  var now = new Date().toISOString()
+  console.log(now + err)
+  fs.appendFile('log/error/' + now.slice(0, 10) + '.json', JSON.stringify(err) + ',', function (err) {
     if (err) throw err
   })
 }
