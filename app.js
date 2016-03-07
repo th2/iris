@@ -19,7 +19,8 @@ var httpListener = express()
 // [http handler]
 // cookie handling and access logging
 httpListener.use(cookieParser(secureConfig.cookieSecret))
-httpListener.use(bodyParser())
+httpListener.use(bodyParser.urlencoded({ extended: true }))
+httpListener.use(bodyParser.json())
 httpListener.use(function (req, res, next) {
   if (req.signedCookies.sid === undefined) {
     // set a new cookie
@@ -48,7 +49,7 @@ function startHttpListener (callback) {
     console.log('http handler listening on port ' + httpListenerPort)
     callback()
   }).on('error', function (err) {
-    if (err.errno === 'EACCES') {
+    if (err.errno === 'EACCES' || err.errno === 'EADDRINUSE') {
       console.log('counld not start http handler on port ' + httpListenerPort)
       if (httpListenerPort === 80) {
         httpListenerPort = 8080
