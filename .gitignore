@@ -1,4 +1,4 @@
 node_modules
 log
-secure.json
-secure1.json
+private.json
+private1.json

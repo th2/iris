@@ -10,7 +10,7 @@ var cookieParser = require('cookie-parser')
 var bodyParser = require('body-parser')
 var util = require('util')
 var logger = require('./logger')
-var secureConfig = require('./secure')
+var privateConfig = require('./private')
 var knownHosts = require('./hosts')
 
 // objects
@@ -18,7 +18,7 @@ var httpListener = express()
 
 // [http handler]
 // cookie handling and access logging
-httpListener.use(cookieParser(secureConfig.cookieSecret))
+httpListener.use(cookieParser(privateConfig.cookieSecret))
 httpListener.use(bodyParser.urlencoded({ extended: true }))
 httpListener.use(bodyParser.json())
 httpListener.use(function (req, res, next) {
@@ -63,7 +63,7 @@ function startHttpListener (callback) {
   })
 }
 
-function connectNetwork () {
+/*function connectNetwork () {
   knownHosts.forEach(function (node) {
     var request = http.request({ host: node.host + ':' + node.port, path: '/network' }, function (response) {
       var page = ''
@@ -90,4 +90,6 @@ function connectNetwork () {
   })
 }
 
-startHttpListener(connectNetwork)
+startHttpListener(connectNetwork)*/
+
+startHttpListener(function(){})
