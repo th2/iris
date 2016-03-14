@@ -39,6 +39,10 @@ httpListener.use('/network', network)
 var visit = require('./admin/visit')
 httpListener.use('/admin', visit)
 
+// photo gallery
+var foto = require('./foto/main')
+httpListener.use('/foto', foto)
+
 // all other paths
 httpListener.use('/', function (req, res) {
   res.send('Hello World!')
@@ -63,7 +67,7 @@ function startHttpListener (callback) {
   })
 }
 
-/*function connectNetwork () {
+/* function connectNetwork () {
   knownHosts.forEach(function (node) {
     var request = http.request({ host: node.host + ':' + node.port, path: '/network' }, function (response) {
       var page = ''
