@@ -4,6 +4,17 @@ var fs = require('fs')
 var path = require('path')
 var privateConfig = require('../private')
 
+var users = {}
+
+// access control
+router.use(function (req, res, next) {
+  if (req.signedCookies.sid in users) {
+    next()
+  } else {
+    res.sendFile('login.html', { root: path.join(__dirname, '../public') });
+  }
+})
+
 router.get('/', function (req, res) {
   res.send('ok')
   console.log(albums)
