@@ -10,10 +10,28 @@ var users = {}
 router.use(function (req, res, next) {
   if (req.signedCookies.sid in users) {
     next()
+  } else if (req.body.name && req.body.name.length > 0) {
+    if (privateConfig.users[req.body.name.toLowerCase()] === req.body.password) {
+      users[req.signedCookies.sid] = req.body.name.toLowerCase()
+      next()
+    } else {
+      sendLoginPage(res, 'Wrong name or password.')
+    }
   } else {
-    res.sendFile('login.html', { root: path.join(__dirname, '../public') });
+    sendLoginPage(res, '')
   }
 })
+
+function sendLoginPage (res, message) {
+  fs.readFile('public/login.html', 'utf-8', function (err, data) {
+    if (err) {
+      res.send('404')
+    } else {
+      res.contentType('text/html')
+      res.send(data.replace('{{m}}', message))
+    }
+  })
+}
 
 router.get('/', function (req, res) {
   res.send('ok')
