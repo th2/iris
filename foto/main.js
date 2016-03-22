@@ -2,17 +2,18 @@ var express = require('express')
 var router = express.Router()
 var fs = require('fs')
 var path = require('path')
-var privateConfig = require('../private')
+var privateConfig = require('../config/private')
+var users = require('../config/users')
 
-var users = {}
+var sessions = {}
 
 // access control
 router.use(function (req, res, next) {
-  if (req.signedCookies.sid in users) {
+  if (req.signedCookies.sid in sessions) {
     next()
   } else if (req.body.name && req.body.name.length > 0) {
-    if (privateConfig.users[req.body.name.toLowerCase()] === req.body.password) {
-      users[req.signedCookies.sid] = req.body.name.toLowerCase()
+    if (users[req.body.name.toLowerCase()] && users[req.body.name.toLowerCase()].pass === req.body.password) {
+      sessions[req.signedCookies.sid] = req.body.name.toLowerCase()
       next()
     } else {
       sendLoginPage(res, 'Wrong name or password.')
@@ -33,7 +34,7 @@ function sendLoginPage (res, message) {
   })
 }
 
-router.get('/', function (req, res) {
+router.use('/', function (req, res) {
   res.send('ok')
   console.log(albums)
 })

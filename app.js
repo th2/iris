@@ -10,8 +10,8 @@ var cookieParser = require('cookie-parser')
 var bodyParser = require('body-parser')
 var util = require('util')
 var logger = require('./logger')
-var privateConfig = require('./private')
-var knownHosts = require('./hosts')
+var privateConfig = require('./config/private')
+var knownHosts = require('./config/hosts')
 
 // objects
 var httpListener = express()

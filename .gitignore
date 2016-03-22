@@ -1,4 +1,3 @@
 node_modules
 log
-private.json
-private1.json
+config
