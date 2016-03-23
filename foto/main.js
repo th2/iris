@@ -2,8 +2,10 @@ var express = require('express')
 var router = express.Router()
 var fs = require('fs')
 var path = require('path')
+var crypto = require('crypto')
 var privateConfig = require('../config/private')
 var users = require('../config/users')
+var galleries = require('../config/galleries')
 
 var sessions = {}
 
@@ -12,7 +14,8 @@ router.use(function (req, res, next) {
   if (req.signedCookies.sid in sessions) {
     next()
   } else if (req.body.name && req.body.name.length > 0) {
-    if (users[req.body.name.toLowerCase()] && users[req.body.name.toLowerCase()].pass === req.body.password) {
+    var passHMAC = crypto.createHmac('sha512', privateConfig.passHMAC).update(req.body.password).digest('base64')
+    if (users[req.body.name.toLowerCase()] && users[req.body.name.toLowerCase()].pass === passHMAC) {
       sessions[req.signedCookies.sid] = req.body.name.toLowerCase()
       next()
     } else {
@@ -34,15 +37,23 @@ function sendLoginPage (res, message) {
   })
 }
 
+router.use('/admin', function (req, res) {
+  if (sessions[req.signedCookies.sid] === 'admin') {
+    res.send(galleryFolders)
+  } else {
+    res.send('403 Forbidden')
+  }
+})
+
 router.use('/', function (req, res) {
-  res.send('ok')
-  console.log(albums)
+  var galleryList = galleries[sessions[req.signedCookies.sid]]
+  res.send(galleryList)
 })
 
 module.exports = router
 
 // file system backend
-var albums = []
+var galleryFolders = []
 
 fs.readdir(privateConfig.originalsPath, function (err, files) {
   if (err) throw err
@@ -51,7 +62,7 @@ fs.readdir(privateConfig.originalsPath, function (err, files) {
       var albumFiles = fs.readdirSync(privateConfig.originalsPath + path.sep + files[i])
       for (var j in albumFiles) {
         if (albumFiles[j].substring(0, 1) !== '.') {
-          albums.push(albumFiles[j])
+          galleryFolders.push(albumFiles[j])
         }
       }
     }
