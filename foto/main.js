@@ -39,9 +39,51 @@ function sendLoginPage (res, message) {
 
 router.use('/admin', function (req, res) {
   if (sessions[req.signedCookies.sid] === 'admin') {
-    res.send(galleryFolders)
+    var page = fs.readFileSync('foto/fotoadmin.html')
+    page += '<table border="1"><th>'
+    for (var userName in users) {
+      page += '<td>' + userName + '</td>'
+    }
+    page += '</th>'
+
+    for (var folderID in galleryFolders) {
+      page += '<tr>'
+      page += '<td>' + galleryFolders[folderID] + '</td>'
+
+      for (var userId in users) {
+        if (galleries[users[userId]] &&
+            galleries[users[userId]].indexOf(galleryFolders[folderID]) > -1 &&
+            galleries[users[userId]][galleryFolders[folderID]]) {
+          page += '<td><input type="button" name="' +
+          galleryFolders[folderID] + '|' + userId + '" value="true" onclick="toggle(this)"></td>'
+        } else {
+          page += '<td><input type="button" name="' +
+          galleryFolders[folderID] + '|' + userId + '" value="false" onclick="toggle(this)"></td>'
+        }
+      }
+
+      page += '<tr>'
+    }
+    page += '</table></body>'
+    res.send(page)
   } else {
     res.send('403 Forbidden')
+  }
+})
+
+router.use('/adminset', function (req, res) {
+  if (sessions[req.signedCookies.sid] === 'admin') {
+    if (!(req.body.user in galleries)) {
+      galleries[req.body.user] = {}
+    }
+    galleries[req.body.user][req.body.gallery] = req.body.value
+    fs.writeFile('config/galleries.json', JSON.stringify(galleries), function (err) {
+      if (err) {
+        console.log('error writing gallery info: ' + err)
+      }
+      console.log('It\'s saved!')
+      console.log(JSON.stringify(galleries))
+    })
   }
 })
 
