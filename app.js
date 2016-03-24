@@ -41,8 +41,8 @@ var visit = require('./admin/visit')
 httpListener.use('/admin', visit)
 
 // photo gallery
-var foto = require('./foto/main')
-httpListener.use('/foto', foto)
+var photo = require('./photo/main')
+httpListener.use('/photo', photo)
 
 // all other paths
 httpListener.use('/', function (req, res) {

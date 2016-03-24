@@ -27,7 +27,7 @@ router.use(function (req, res, next) {
 })
 
 function sendLoginPage (res, message) {
-  fs.readFile('foto/template/login.html', 'utf-8', function (err, data) {
+  fs.readFile('photo/template/login.html', 'utf-8', function (err, data) {
     if (err) {
       res.send('404')
     } else {
@@ -39,7 +39,7 @@ function sendLoginPage (res, message) {
 
 router.use('/admin', function (req, res) {
   if (sessions[req.signedCookies.sid] === 'admin') {
-    var page = fs.readFileSync('foto/fotoadmin.html')
+    var page = fs.readFileSync('photo/photoadmin.html')
     page += '<table border="1"><th>'
     for (var userName in users) {
       page += '<td>' + userName + '</td>'
@@ -88,13 +88,16 @@ router.use('/adminset', function (req, res) {
 })
 
 router.use('/', function (req, res) {
-  fs.readFile('foto/template/mainlist.html', 'utf-8', function (err, data) {
+  fs.readFile('photo/template/mainlist.html', 'utf-8', function (err, data) {
     if (err) {
       res.send('404')
     } else {
       var listElement = ''
       for (var galeryName in galleries[sessions[req.signedCookies.sid]]) {
-        listElement += galeryName + '<br>'
+        listElement += '<li><a href="/photo/' + galeryName + '"><span class="listlink">' +
+        '<span class="listdate">' + galeryName.substring(0, 10) + '</span>' +
+        '<span class="listtitle">' + galeryName.substring(11) + '</span></span></a>' +
+        '<a href="/photo/download/' + galeryName + '.zip"><i class="mdi mdi-download listdl btn"></i></a></li>'
       }
 
       res.contentType('text/html')
