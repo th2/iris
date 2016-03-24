@@ -27,7 +27,7 @@ router.use(function (req, res, next) {
 })
 
 function sendLoginPage (res, message) {
-  fs.readFile('public/login.html', 'utf-8', function (err, data) {
+  fs.readFile('foto/template/login.html', 'utf-8', function (err, data) {
     if (err) {
       res.send('404')
     } else {
@@ -88,8 +88,19 @@ router.use('/adminset', function (req, res) {
 })
 
 router.use('/', function (req, res) {
-  var galleryList = galleries[sessions[req.signedCookies.sid]]
-  res.send(galleryList)
+  fs.readFile('foto/template/mainlist.html', 'utf-8', function (err, data) {
+    if (err) {
+      res.send('404')
+    } else {
+      var listElement = ''
+      for (var galeryName in galleries[sessions[req.signedCookies.sid]]) {
+        listElement += galeryName + '<br>'
+      }
+
+      res.contentType('text/html')
+      res.send(data.replace('{{username}}', sessions[req.signedCookies.sid]).replace('{{list}}', listElement))
+    }
+  })
 })
 
 module.exports = router

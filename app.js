@@ -19,6 +19,7 @@ var httpListener = express()
 // [http handler]
 // cookie handling and access logging
 httpListener.use(cookieParser(privateConfig.cookieSecret))
+httpListener.use(express.static('public'))
 httpListener.use(bodyParser.urlencoded({ extended: true }))
 httpListener.use(bodyParser.json())
 httpListener.use(function (req, res, next) {
