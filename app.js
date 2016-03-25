@@ -17,11 +17,13 @@ var knownHosts = require('./config/hosts')
 var httpListener = express()
 
 // [http handler]
-// cookie handling and access logging
-httpListener.use(cookieParser(privateConfig.cookieSecret))
+// use public folder, cookieParser and json bodyParser
 httpListener.use(express.static('public'))
+httpListener.use(cookieParser(privateConfig.cookieSecret))
 httpListener.use(bodyParser.urlencoded({ extended: true }))
 httpListener.use(bodyParser.json())
+
+// access logging
 httpListener.use(function (req, res, next) {
   if (req.signedCookies.sid === undefined) {
     // set a new cookie

@@ -6,7 +6,6 @@ var crypto = require('crypto')
 var privateConfig = require('../config/private')
 var users = require('../config/users')
 var galleries = require('../config/galleries')
-
 var sessions = {}
 
 // access control
@@ -51,9 +50,9 @@ router.use('/admin', function (req, res) {
       page += '<td>' + galleryFolders[folderID] + '</td>'
 
       for (var userId in users) {
-        if (galleries[users[userId]] &&
-            galleries[users[userId]].indexOf(galleryFolders[folderID]) > -1 &&
-            galleries[users[userId]][galleryFolders[folderID]]) {
+        if (galleries[userId] !== undefined &&
+            (galleryFolders[folderID] in galleries[userId]) &&
+            galleries[userId][galleryFolders[folderID]]) {
           page += '<td><input type="button" name="' +
           galleryFolders[folderID] + '|' + userId + '" value="true" onclick="toggle(this)"></td>'
         } else {
@@ -76,14 +75,31 @@ router.use('/adminset', function (req, res) {
     if (!(req.body.user in galleries)) {
       galleries[req.body.user] = {}
     }
-    galleries[req.body.user][req.body.gallery] = req.body.value
+    if (req.body.value === 'true') {
+      galleries[req.body.user][req.body.gallery] = true
+    } else {
+      galleries[req.body.user][req.body.gallery] = false
+    }
+
     fs.writeFile('config/galleries.json', JSON.stringify(galleries), function (err) {
       if (err) {
         console.log('error writing gallery info: ' + err)
       }
-      console.log('It\'s saved!')
+      console.log('gallery info saved')
       console.log(JSON.stringify(galleries))
     })
+  }
+})
+
+router.use('/download', function (req, res) {
+  var galleryName = decodeURI(req.url).substring(1)
+  if (galleryName.slice(-4) === '.zip') {
+    galleryName = galleryName.substring(0, galleryName.length - 4)
+  }
+  if (galleries[sessions[req.signedCookies.sid]][galleryName]) {
+    res.sendFile(galleryName + '.zip', { root: path.join(privateConfig.cachePath, 'zip', galleryName.substring(0, 4)) })
+  } else {
+    res.send('403 Forbidden')
   }
 })
 

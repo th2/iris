@@ -1,5 +1,5 @@
 <html><head>
-<title>Foto Admin</title>  
+<title>Photo Admin</title>  
 <script type="text/javascript">
 function toggle (element) {
   var httpRequest = new XMLHttpRequest()
@@ -10,7 +10,7 @@ function toggle (element) {
       element.value = 'true'
     }
   }
-  httpRequest.open('POST', '/foto/adminset', true)
+  httpRequest.open('POST', '/photo/adminset', true)
   httpRequest.setRequestHeader('Content-type', 'application/x-www-form-urlencoded')
   httpRequest.send('gallery=' + element.name.split('|')[0] + '&user=' + element.name.split('|')[1] + '&value=' + element.value)
 }
