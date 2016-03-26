@@ -46,19 +46,18 @@ router.use('/admin', function (req, res) {
     page += '</th>'
 
     for (var folderID in galleryFolders) {
-      page += '<tr>'
-      page += '<td>' + galleryFolders[folderID] + '</td>'
+      page += '<tr><td>' + galleryFolders[folderID] + '</td>'
 
       for (var userId in users) {
+        page += '<td><input type="button" name="' + galleryFolders[folderID] + '|' + userId + '" value="'
         if (galleries[userId] !== undefined &&
             (galleryFolders[folderID] in galleries[userId]) &&
             galleries[userId][galleryFolders[folderID]]) {
-          page += '<td><input type="button" name="' +
-          galleryFolders[folderID] + '|' + userId + '" value="true" onclick="toggle(this)"></td>'
+          page += 'true'
         } else {
-          page += '<td><input type="button" name="' +
-          galleryFolders[folderID] + '|' + userId + '" value="false" onclick="toggle(this)"></td>'
+          page += 'false'
         }
+        page += '" onclick="toggle(this)"></td>'
       }
 
       page += '<tr>'
@@ -104,23 +103,45 @@ router.use('/download', function (req, res) {
 })
 
 router.use('/', function (req, res) {
+  var galleryName = decodeURI(req.url).substring(1)
+  if (galleryName.length === 0) {
+    sendMainList(res, sessions[req.signedCookies.sid])
+  } else {
+    sendGalleryList(res, sessions[req.signedCookies.sid], galleryName)
+  }
+})
+
+function sendMainList (res, userName) {
   fs.readFile('photo/template/mainlist.html', 'utf-8', function (err, data) {
     if (err) {
       res.send('404')
     } else {
       var listElement = ''
-      for (var galeryName in galleries[sessions[req.signedCookies.sid]]) {
-        listElement += '<li><a href="/photo/' + galeryName + '"><span class="listlink">' +
-        '<span class="listdate">' + galeryName.substring(0, 10) + '</span>' +
-        '<span class="listtitle">' + galeryName.substring(11) + '</span></span></a>' +
-        '<a href="/photo/download/' + galeryName + '.zip"><i class="mdi mdi-download listdl btn"></i></a></li>'
+      for (var galleryName in galleries[userName]) {
+        listElement += '<li><a href="/photo/' + galleryName + '"><span class="listlink">' +
+        '<span class="listdate">' + galleryName.substring(0, 10) + '</span>' +
+        '<span class="listtitle">' + galleryName.substring(11) + '</span></span></a>' +
+        '<a href="/photo/download/' + galleryName + '.zip"><i class="mdi mdi-download listdl btn"></i></a></li>'
       }
 
       res.contentType('text/html')
-      res.send(data.replace('{{username}}', sessions[req.signedCookies.sid]).replace('{{list}}', listElement))
+      res.send(data.replace('{{username}}', userName).replace('{{list}}', listElement))
     }
   })
-})
+}
+
+function sendGalleryList (res, userName, galleryName) {
+  fs.readFile('photo/template/photolist.html', 'utf-8', function (err, data) {
+    if (err) {
+      res.send('404')
+    } else {
+      var listElement = 'TODO'
+
+      res.contentType('text/html')
+      res.send(data.replace('{{username}}', userName).replace('{{list}}', listElement))
+    }
+  })
+}
 
 module.exports = router
 
