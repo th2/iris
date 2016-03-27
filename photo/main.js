@@ -102,6 +102,33 @@ router.use('/download', function (req, res) {
   }
 })
 
+router.use('/original', function (req, res) {
+  var filePath = decodeURI(req.url).substring(1).split('/')
+  if (galleries[sessions[req.signedCookies.sid]][filePath[0]]) {
+    res.sendFile(filePath[1], { root: path.join(privateConfig.originalsPath, filePath[0].substring(0, 4), filePath[0]) })
+  } else {
+    res.send('403 Forbidden')
+  }
+})
+
+router.use('/small', function (req, res) {
+  var filePath = decodeURI(req.url).substring(1).split('/')
+  if (galleries[sessions[req.signedCookies.sid]][filePath[0]]) {
+    res.sendFile(filePath[1], { root: path.join(privateConfig.cachePath, 'small', filePath[0].substring(0, 4), filePath[0]) })
+  } else {
+    res.send('403 Forbidden')
+  }
+})
+
+router.use('/thumb', function (req, res) {
+  var filePath = decodeURI(req.url).substring(1).split('/')
+  if (galleries[sessions[req.signedCookies.sid]][filePath[0]]) {
+    res.sendFile(filePath[1], { root: path.join(privateConfig.cachePath, 'thumb', filePath[0].substring(0, 4), filePath[0]) })
+  } else {
+    res.send('403 Forbidden')
+  }
+})
+
 router.use('/', function (req, res) {
   var galleryName = decodeURI(req.url).substring(1)
   if (galleryName.length === 0) {
@@ -118,10 +145,12 @@ function sendMainList (res, userName) {
     } else {
       var listElement = ''
       for (var galleryName in galleries[userName]) {
-        listElement += '<li><a href="/photo/' + galleryName + '"><span class="listlink">' +
-        '<span class="listdate">' + galleryName.substring(0, 10) + '</span>' +
-        '<span class="listtitle">' + galleryName.substring(11) + '</span></span></a>' +
-        '<a href="/photo/download/' + galleryName + '.zip"><i class="mdi mdi-download listdl btn"></i></a></li>'
+        if (galleries[userName][galleryName]) {
+          listElement += '<li><a href="/photos/' + galleryName + '"><span class="listlink">' +
+          '<span class="listdate">' + galleryName.substring(0, 10) + '</span>' +
+          '<span class="listtitle">' + galleryName.substring(11) + '</span></span></a>' +
+          '<a href="/photos/download/' + galleryName + '.zip"><i class="mdi mdi-download listdl btn"></i></a></li>'
+        }
       }
 
       res.contentType('text/html')
@@ -131,16 +160,31 @@ function sendMainList (res, userName) {
 }
 
 function sendGalleryList (res, userName, galleryName) {
-  fs.readFile('photo/template/photolist.html', 'utf-8', function (err, data) {
-    if (err) {
-      res.send('404')
-    } else {
-      var listElement = 'TODO'
-
-      res.contentType('text/html')
-      res.send(data.replace('{{username}}', userName).replace('{{list}}', listElement))
-    }
-  })
+  if (!galleries[userName][galleryName]) {
+    res.send('403 Forbidden')
+  } else {
+    fs.readFile('photo/template/photolist.html', 'utf-8', function (err, data) {
+      if (err) {
+        res.send('404')
+      } else {
+        fs.readdir(privateConfig.originalsPath + path.sep + galleryName.substring(0, 4) + path.sep + galleryName, function (err, files) {
+          if (err) throw err
+          var listElement = ''
+          for (var i in files) {
+            if (files[i].slice(-4) === '.jpg' || files[i].slice(-4) === '.jpeg') {
+              listElement += '<a class="thumb" href="/photos/small/' + galleryName + '/' + files[i] + '" onclick="return viewer.show()">' +
+                '<img src="/photos/thumb/' + galleryName + '/' + files[i] + '" alt="" /></a>'
+            } else {
+              listElement += '<a class="thumb" href="/photos/original/' + galleryName + '/' + files[i] + '" onclick="return viewer.show()">' +
+                files[i] + '</a>'
+            }
+          }
+          res.contentType('text/html')
+          res.send(data.replace('{{username}}', userName).replace('{{list}}', listElement))
+        })
+      }
+    })
+  }
 }
 
 module.exports = router
