@@ -8,11 +8,16 @@ var users = require('../config/users')
 var galleries = require('../config/galleries')
 var sessions = {}
 
+router.use('/logout', function (req, res) {
+  delete sessions[req.signedCookies.sid]
+  sendLoginPage(res, 'Logout successful.')
+})
+
 // access control
 router.use(function (req, res, next) {
   if (req.signedCookies.sid in sessions) {
     next()
-  } else if (req.body.name && req.body.name.length > 0) {
+  } else if (req.body.name) {
     var passHMAC = crypto.createHmac('sha512', privateConfig.passHMAC).update(req.body.password).digest('base64')
     if (users[req.body.name.toLowerCase()] && users[req.body.name.toLowerCase()].pass === passHMAC) {
       sessions[req.signedCookies.sid] = req.body.name.toLowerCase()
@@ -25,16 +30,41 @@ router.use(function (req, res, next) {
   }
 })
 
-function sendLoginPage (res, message) {
-  fs.readFile('photo/template/login.html', 'utf-8', function (err, data) {
-    if (err) {
-      res.send('404')
+// settings page handler
+router.use(function (req, res, next) {
+  var userName = sessions[req.signedCookies.sid]
+  if (req.body.password1) {
+    var oldPassHMAC = crypto.createHmac('sha512', privateConfig.passHMAC).update(req.body.password1).digest('base64')
+
+    if (req.body.password2) {
+      if (users[userName].pass === oldPassHMAC) {
+        users[userName].pass = crypto.createHmac('sha512', privateConfig.passHMAC).update(req.body.password2).digest('base64')
+        fs.writeFile('config/users.json', JSON.stringify(users), function (err) { if (err) console.log('error writing users: ' + err) })
+        next()
+      } else {
+        sendSettingsPage(res, userName, 'Old password incorrect.', '')
+      }
+    } else if (req.body.mail) {
+      if (users[userName].pass === oldPassHMAC) {
+        users[userName].mail = req.body.mail
+        fs.writeFile('config/users.json', JSON.stringify(users), function (err) { if (err) console.log('error writing users: ' + err) })
+        next()
+      } else {
+        sendSettingsPage(res, userName, '', 'Old password incorrect.')
+      }
     } else {
-      res.contentType('text/html')
-      res.send(data.replace('{{m}}', message))
+      sendSettingsPage(res, userName, '', '')
     }
-  })
-}
+  } else if (users[sessions[req.signedCookies.sid]].mail.length > 0) {
+    next()
+  } else {
+    sendSettingsPage(res, userName, '', 'Please set an e-mail address.')
+  }
+})
+
+router.use('/settings', function (req, res) {
+  sendSettingsPage(res, sessions[req.signedCookies.sid], '', '')
+})
 
 router.use('/admin', function (req, res) {
   if (sessions[req.signedCookies.sid] === 'admin') {
@@ -137,6 +167,33 @@ router.use('/', function (req, res) {
     sendGalleryList(res, sessions[req.signedCookies.sid], galleryName)
   }
 })
+
+function sendLoginPage (res, message) {
+  fs.readFile('photo/template/login.html', 'utf-8', function (err, data) {
+    if (err) {
+      res.send('404')
+    } else {
+      res.contentType('text/html')
+      res.send(data.replace('{{m}}', message))
+    }
+  })
+}
+
+function sendSettingsPage (res, userName, message1, message2) {
+  fs.readFile('photo/template/settings.html', 'utf-8', function (err, data) {
+    if (err) {
+      res.send('404')
+    } else {
+      res.contentType('text/html')
+      data = data.replace(/{{username}}/g, userName)
+      data = data.replace('{{errormsg1}}', message1)
+      data = data.replace('{{errormsg2}}', message2)
+      if (users[userName])
+        data = data.replace('{{usermail}}', users[userName].mail)
+      res.send(data)
+    }
+  })
+}
 
 function sendMainList (res, userName) {
   fs.readFile('photo/template/mainlist.html', 'utf-8', function (err, data) {
