@@ -2,25 +2,16 @@ var express = require('express')
 var router = express.Router()
 var fs = require('fs')
 var util = require('util')
+var dateFormat = require('dateformat')
 var secureConfig = require('../config/private')
 
 var authorized = []
 var invalidLoginAttempts = 0
 var lastLoginAttempt = 0
 
-Array.contains = function (obj) {
-  var i = this.length
-  while (i--) {
-    if (this[i] === obj) {
-      return true
-    }
-  }
-  return false
-}
-
 // check if user is authorized
 router.use(function (req, res, next) {
-  if (authorized.contains(req.signedCookies.sid)) {
+  if (authorized[req.signedCookies.sid]) {
     next()
   } else if (10000 * invalidLoginAttempts + lastLoginAttempt > new Date().getTime()) {
     res.send('<style>body { background-color: #444; }</style><script>' +
@@ -33,7 +24,7 @@ router.use(function (req, res, next) {
         Math.floor((10000 * invalidLoginAttempts + lastLoginAttempt - new Date().getTime()) / 1000) +
         '</span> seconds')
   } else if (req.body.adminpw === secureConfig.adminPassword) {
-    authorized.push(req.signedCookies.sid)
+    authorized[req.signedCookies.sid] = true
     invalidLoginAttempts = 0
     next()
   } else {
@@ -53,22 +44,31 @@ router.use(function (req, res, next) {
   }
 })
 
-router.get('/', function (req, res) {
+router.use('/', function (req, res) {
+  var today = new Date()
+  if (req.url !== '/') {
+    today = new Date(parseInt(req.url.substring(1)))
+  }
+  var yesterday = new Date().setDate(today.getDate() - 1)
+  var tomorrow = new Date().setDate(today.getDate() + 1)
+  var response = '<a href="' + yesterday + '">' + dateFormat(yesterday, 'yyyy-mm-dd') + '</a> ' +
+  dateFormat(today, 'yyyy-mm-dd') +
+  ' <a href="' + tomorrow + '">' + dateFormat(tomorrow, 'yyyy-mm-dd') + '</a><br><table>'
+
   var visits = JSON.parse('[' +
-    fs.readFileSync('log/' + new Date().toISOString().slice(0, 10) + '.txt').slice(0, -1) + ']')
-  var response = ''
+    fs.readFileSync('log/visit/' + dateFormat(today, 'yyyy-mm-dd') + '.json').slice(0, -1) + ']')
   visits.forEach(function (entry) {
-    response +=
-      new Date(entry.date).toISOString() + ' ' +
-      entry.url + ' ' +
-      entry.method + ' ' +
-      entry.cookie + ' ' +
-      util.inspect(entry.headers) + '<br>'
+    response += '<tr>' +
+      '<td>' + new Date(entry.date).toISOString() + '</td>' +
+      '<td>' + entry.method + ' ' + entry.url + '</td>' +
+      '<td>' + util.inspect(entry.cookie) + '</td>' +
+      '<td><input type="text" name="details" value="' + util.inspect(entry.headers) + '"></td></tr>'
   })
+  response += '</table>'
   res.send(response)
 })
 
-router.get('/settings', function (req, res) {
+router.use('/settings', function (req, res) {
   res.send('todo')
 })
 

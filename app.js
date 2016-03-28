@@ -4,14 +4,13 @@ var httpListenerPort = 80
 // var protocolVersion = 1
 
 // includes
-var http = require('http')
 var express = require('express')
 var cookieParser = require('cookie-parser')
 var bodyParser = require('body-parser')
-var util = require('util')
 var logger = require('./logger')
 var privateConfig = require('./config/private')
-var knownHosts = require('./config/hosts')
+// var http = require('http')
+// var knownHosts = require('./config/hosts')
 
 // objects
 var httpListener = express()
@@ -102,4 +101,4 @@ function startHttpListener (callback) {
 
 startHttpListener(connectNetwork)*/
 
-startHttpListener(function(){})
+startHttpListener(function () {})

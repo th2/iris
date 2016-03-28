@@ -8,24 +8,36 @@ var users = require('../config/users')
 var galleries = require('../config/galleries')
 var sessions = {}
 
-router.use('/logout', function (req, res) {
-  delete sessions[req.signedCookies.sid]
-  sendLoginPage(res, 'Logout successful.')
+// logout page to handle session termination
+router.use('/logout', function (req, res, next) {
+  if (req.body.name) {
+    // enable user login on logout page
+    next()
+  } else {
+    // perform logout
+    delete sessions[req.signedCookies.sid]
+    sendLoginPage(res, 'Logout successful.')
+  }
 })
 
 // access control
 router.use(function (req, res, next) {
   if (req.signedCookies.sid in sessions) {
+    // user is logged in
     next()
   } else if (req.body.name) {
+    // user sent credentials
     var passHMAC = crypto.createHmac('sha512', privateConfig.passHMAC).update(req.body.password).digest('base64')
     if (users[req.body.name.toLowerCase()] && users[req.body.name.toLowerCase()].pass === passHMAC) {
       sessions[req.signedCookies.sid] = req.body.name.toLowerCase()
+      // corrent credentials
       next()
     } else {
+      // incorrent credentials
       sendLoginPage(res, 'Wrong name or password.')
     }
   } else {
+    // user is not logged in and has sent no credentials
     sendLoginPage(res, '')
   }
 })
@@ -161,7 +173,7 @@ router.use('/thumb', function (req, res) {
 
 router.use('/', function (req, res) {
   var galleryName = decodeURI(req.url).substring(1)
-  if (galleryName.length === 0) {
+  if (galleryName.length === 0 || galleryName === 'logout') {
     sendMainList(res, sessions[req.signedCookies.sid])
   } else {
     sendGalleryList(res, sessions[req.signedCookies.sid], galleryName)
@@ -188,8 +200,9 @@ function sendSettingsPage (res, userName, message1, message2) {
       data = data.replace(/{{username}}/g, userName)
       data = data.replace('{{errormsg1}}', message1)
       data = data.replace('{{errormsg2}}', message2)
-      if (users[userName])
+      if (users[userName]) {
         data = data.replace('{{usermail}}', users[userName].mail)
+      }
       res.send(data)
     }
   })
