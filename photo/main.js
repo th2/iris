@@ -3,6 +3,7 @@ var router = express.Router()
 var fs = require('fs')
 var path = require('path')
 var crypto = require('crypto')
+var dateFormat = require('dateformat')
 var privateConfig = require('../config/private')
 var users = require('../config/users')
 var galleries = require('../config/galleries')
@@ -15,6 +16,7 @@ router.use('/logout', function (req, res, next) {
     next()
   } else {
     // perform logout
+    logSession(req.signedCookies.sid, false)
     delete sessions[req.signedCookies.sid]
     sendLoginPage(res, 'Logout successful.')
   }
@@ -30,6 +32,7 @@ router.use(function (req, res, next) {
     var passHMAC = crypto.createHmac('sha512', privateConfig.passHMAC).update(req.body.password).digest('base64')
     if (users[req.body.name.toLowerCase()] && users[req.body.name.toLowerCase()].pass === passHMAC) {
       sessions[req.signedCookies.sid] = req.body.name.toLowerCase()
+      logSession(req.signedCookies.sid, true)
       // corrent credentials
       next()
     } else {
@@ -275,3 +278,15 @@ fs.readdir(privateConfig.originalsPath, function (err, files) {
     }
   }
 })
+
+function logSession (sessionId, start) {
+  var session = {}
+  session.time = new Date()
+  session.sid = sessionId
+  session.user = sessions[sessionId]
+  session.start = start
+
+  fs.appendFile('log/session/' + dateFormat(new Date(), 'yyyy-mm-dd') + '.json', JSON.stringify(session) + ',', function (err) {
+    if (err) throw err
+  })
+}

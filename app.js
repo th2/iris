@@ -29,7 +29,7 @@ httpListener.use(function (req, res, next) {
     var random = Math.random().toString(36).substring(2) + Date.now().toString(36)
     res.cookie('sid', random, { maxAge: 31536000, httpOnly: true, signed: true })
   }
-  logger.visitor(req.url, req.method, req.signedCookies, req.headers)
+  logger.visitor(req)
   next()
 })
 

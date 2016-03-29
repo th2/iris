@@ -60,7 +60,11 @@ router.use('/', function (req, res) {
   visits.forEach(function (entry) {
     response += '<tr>' +
       '<td>' + new Date(entry.date).toISOString() + '</td>' +
-      '<td>' + entry.method + ' ' + entry.url + '</td>' +
+      '<td>' + entry.url
+    if (Object.keys(entry.body).length !== 0) {
+      response += ' ' + util.inspect(entry.body)
+    }
+    response += '</td>' +
       '<td>' + util.inspect(entry.cookie) + '</td>' +
       '<td><input type="text" name="details" value="' + util.inspect(entry.headers) + '"></td></tr>'
   })
