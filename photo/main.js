@@ -108,6 +108,8 @@ router.use('/admin', function (req, res) {
       page += '<tr>'
     }
     page += '</table></body>'
+
+    res.contentType('text/html')
     res.send(page)
   } else {
     res.send('403 Forbidden')

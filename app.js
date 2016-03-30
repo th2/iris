@@ -4,9 +4,11 @@ var httpListenerPort = 80
 // var protocolVersion = 1
 
 // includes
+var fs = require('fs')
 var express = require('express')
 var cookieParser = require('cookie-parser')
 var bodyParser = require('body-parser')
+var path = require('path')
 var logger = require('./logger')
 var privateConfig = require('./config/private')
 // var http = require('http')
@@ -50,8 +52,83 @@ httpListener.use('/fotos', photo)
 
 // all other paths
 httpListener.use('/', function (req, res) {
-  res.send('Hello World!')
+  if (req.url === '/') {
+    fs.readFile('template/index.html', 'utf-8', function (err, page) {
+      if (err) {
+        res.send('404')
+      } else {
+        var cmds = [ 'cat welcome.page', 'contact' ]
+        var response = ''
+        for (var i in cmds) {
+          response += '<span class="inlog">' + cmds[i] + '</span><br>'
+          response += reply(cmds[i])
+        }
+        page = page.replace('{{cmdlog}}', response)
+
+        res.contentType('text/html')
+        res.send(page)
+      }
+    })
+  } else if (req.url.substring(0, 3) === '/c/') {
+    res.send(reply(req.url.substring(3)))
+  } else {
+    res.send('404')
+  }
 })
+
+function reply (query) {
+  query = decodeURI(query)
+  if (query === 'contact') query = 'cat contact.page'
+  if (query === 'color') query = 'wall color'
+  if (query === 'help') query = 'cat help.page'
+  if (query === 'snake') query = 'cat snake.page'
+
+  var cmd = query
+  var dat = ''
+  var firstSpace = query.indexOf(' ')
+  if (firstSpace > -1) {
+    cmd = query.substring(0, firstSpace)
+    dat = query.substring(firstSpace + 1)
+  }
+
+  switch (cmd.toLowerCase()) {
+    case 'cat':
+      if (dat === '') {
+        return 'cat FILENAME - print file with name FILENAME'
+      } else {
+        if (path.dirname('files/' + dat).substring(0, 5) === 'files') {
+          try {
+            return fs.readFileSync('files/' + dat)
+          } catch (err) {
+            return 'no such file or directory'
+          }
+        } else {
+          return ''
+        }
+      }
+
+      /* $echo .= 'cat: <span class="cmd ls_'.$dat.'">'.$dat.'</span>: Is a directory';
+        else
+          $echo .= file_get_contents(realpath($dat));
+      else
+        $echo .= 'cat: cannot access '.$dat.': No such file';
+          break;*/
+    case 'clear': return '{clear}'
+    case 'echo': return dat
+    case 'emacs': return 'emacs is not available, try <span class="cmd vi">vi</span>.'
+    case 'make':
+      if (dat === 'me a sandwich') return 'What? Make it yourself.'
+      else return 'make: *** No rule to make target \'' + cmd + '\'.  Stop.'
+    case 'stats': return 'comming soon'
+    case 'sudo':
+      if (dat === 'make me a sandwich') return 'Okay.'
+      else return 'username is not in the sudoers file. This incident will be reported.'
+    case 'test': return 'true'
+    case 'vi': return 'vi is not available, try <span class="cmd emacs">emacs</span>.'
+    case 'vim': return 'vim is not available, try <span class="cmd emacs">emacs</span>.'
+    default: return '<span class="error">Could not understand command "' + query + '", try <span class="cmd help">help</span>.</span>'
+  }
+}
 
 function startHttpListener (callback) {
   httpListener.listen(httpListenerPort, function () {
