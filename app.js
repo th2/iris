@@ -93,14 +93,14 @@ function reply (query) {
 
   switch (cmd.toLowerCase()) {
     case 'cat':
-      if (dat === '') {
+      if (dat === '' || dat === '-h' || dat === '-help' || dat === '--help') {
         return 'cat FILENAME - print file with name FILENAME'
       } else {
         if (path.dirname('files/' + dat).substring(0, 5) === 'files') {
           try {
             return fs.readFileSync('files/' + dat)
           } catch (err) {
-            return 'no such file or directory'
+            return 'no such file'
           }
         } else {
           return ''
@@ -116,6 +116,22 @@ function reply (query) {
     case 'clear': return '{clear}'
     case 'echo': return dat
     case 'emacs': return 'emacs is not available, try <span class="cmd vi">vi</span>.'
+    case 'ls':
+      if (dat === '-h' || dat === '-help' || dat === '--help') {
+        return 'ls DIRECTORY - list all files with DIRECTORY'
+      } else {
+        var dir = path.join('files/', dat)
+        console.log('aaa' + path.dirname(dir))
+        if (path.dirname(dir).substring(0, 5) === 'files') {
+          try {
+            return fs.readdirSync(dir)
+          } catch (err) {
+            return 'no such directory'
+          }
+        } else {
+          return ''
+        }
+      }
     case 'make':
       if (dat === 'me a sandwich') return 'What? Make it yourself.'
       else return 'make: *** No rule to make target \'' + cmd + '\'.  Stop.'
