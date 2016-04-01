@@ -1,7 +1,5 @@
 // config
 var httpListenerPort = 80
-// TODO: use protocol version
-// var protocolVersion = 1
 
 // includes
 var fs = require('fs')
@@ -9,10 +7,14 @@ var express = require('express')
 var cookieParser = require('cookie-parser')
 var bodyParser = require('body-parser')
 var path = require('path')
+var crypto = require('crypto')
+var dateFormat = require('dateformat')
 var logger = require('./logger')
+
 var privateConfig = require('./config/private')
-// var http = require('http')
-// var knownHosts = require('./config/hosts')
+var users = require('./config/users')
+var galleries = require('./config/galleries')
+var sessions = {}
 
 // objects
 var httpListener = express()
@@ -23,6 +25,10 @@ httpListener.use(express.static('public'))
 httpListener.use(cookieParser(privateConfig.cookieSecret))
 httpListener.use(bodyParser.urlencoded({ extended: true }))
 httpListener.use(bodyParser.json())
+
+// admin panel
+var visit = require('./admin/visit')
+httpListener.use('/admin', visit)
 
 // access logging
 httpListener.use(function (req, res, next) {
@@ -35,114 +41,256 @@ httpListener.use(function (req, res, next) {
   next()
 })
 
-// internal communication
-var network = require('./network')
-httpListener.use('/network', network)
-
-// admin panel
-var visit = require('./admin/visit')
-httpListener.use('/admin', visit)
-
-// photo gallery
-var photo = require('./photo/main')
-httpListener.use('/photo', photo)
-httpListener.use('/photos', photo)
-httpListener.use('/foto', photo)
-httpListener.use('/fotos', photo)
-
-// all other paths
-httpListener.use('/', function (req, res) {
-  if (req.url === '/') {
-    fs.readFile('template/index.html', 'utf-8', function (err, page) {
-      if (err) {
-        res.send('404')
-      } else {
-        var cmds = [ 'cat welcome.page', 'contact' ]
-        var response = ''
-        for (var i in cmds) {
-          response += '<span class="inlog">' + cmds[i] + '</span><br>'
-          response += reply(cmds[i])
-        }
-        page = page.replace('{{cmdlog}}', response)
-
-        res.contentType('text/html')
-        res.send(page)
-      }
-    })
-  } else if (req.url.substring(0, 3) === '/c/') {
-    res.send(reply(req.url.substring(3)))
+// logout page to handle session termination
+httpListener.use('/logout', function (req, res, next) {
+  if (req.body.name) {
+    // enable user login on logout page
+    next()
   } else {
-    res.send('404')
+    // perform logout
+    logSession(req.signedCookies.sid, false)
+    delete sessions[req.signedCookies.sid]
+    sendLoginPage(res, 'Logout successful.')
   }
 })
 
-function reply (query) {
-  query = decodeURI(query)
-  if (query === 'contact') query = 'cat contact.page'
-  if (query === 'color') query = 'wall color'
-  if (query === 'help') query = 'cat help.page'
-  if (query === 'snake') query = 'cat snake.page'
-
-  var cmd = query
-  var dat = ''
-  var firstSpace = query.indexOf(' ')
-  if (firstSpace > -1) {
-    cmd = query.substring(0, firstSpace)
-    dat = query.substring(firstSpace + 1)
+// access control
+httpListener.use(function (req, res, next) {
+  if (req.signedCookies.sid in sessions) {
+    // user is logged in
+    next()
+  } else if (req.body.name) {
+    // user sent credentials
+    var passHMAC = crypto.createHmac('sha512', privateConfig.passHMAC).update(req.body.password).digest('base64')
+    if (users[req.body.name.toLowerCase()] && users[req.body.name.toLowerCase()].pass === passHMAC) {
+      sessions[req.signedCookies.sid] = req.body.name.toLowerCase()
+      logSession(req.signedCookies.sid, true)
+      // corrent credentials
+      next()
+    } else {
+      // incorrent credentials
+      sendLoginPage(res, 'Wrong name or password.')
+    }
+  } else {
+    // user is not logged in and has sent no credentials
+    sendLoginPage(res, '')
   }
+})
 
-  switch (cmd.toLowerCase()) {
-    case 'cat':
-      if (dat === '' || dat === '-h' || dat === '-help' || dat === '--help') {
-        return 'cat FILENAME - print file with name FILENAME'
+// settings page handler
+httpListener.use(function (req, res, next) {
+  var userName = sessions[req.signedCookies.sid]
+  if (req.body.password1) {
+    var oldPassHMAC = crypto.createHmac('sha512', privateConfig.passHMAC).update(req.body.password1).digest('base64')
+
+    if (req.body.password2) {
+      if (users[userName].pass === oldPassHMAC) {
+        users[userName].pass = crypto.createHmac('sha512', privateConfig.passHMAC).update(req.body.password2).digest('base64')
+        fs.writeFile('config/users.json', JSON.stringify(users), function (err) { if (err) console.log('error writing users: ' + err) })
+        next()
       } else {
-        if (path.dirname('files/' + dat).substring(0, 5) === 'files') {
-          try {
-            return fs.readFileSync('files/' + dat)
-          } catch (err) {
-            return 'no such file'
-          }
+        sendSettingsPage(res, userName, 'Old password incorrect.', '')
+      }
+    } else if (req.body.mail) {
+      if (users[userName].pass === oldPassHMAC) {
+        users[userName].mail = req.body.mail
+        fs.writeFile('config/users.json', JSON.stringify(users), function (err) { if (err) console.log('error writing users: ' + err) })
+        next()
+      } else {
+        sendSettingsPage(res, userName, '', 'Old password incorrect.')
+      }
+    } else {
+      sendSettingsPage(res, userName, '', '')
+    }
+  } else if (users[sessions[req.signedCookies.sid]].mail.length > 0) {
+    next()
+  } else {
+    sendSettingsPage(res, userName, '', 'Please set an e-mail address.')
+  }
+})
+
+httpListener.use('/settings', function (req, res) {
+  sendSettingsPage(res, sessions[req.signedCookies.sid], '', '')
+})
+
+httpListener.use('/admin', function (req, res) {
+  if (sessions[req.signedCookies.sid] === 'admin') {
+    var page = fs.readFileSync('template/photoadmin.html')
+    page += '<table border="1"><th>'
+    for (var userName in users) {
+      page += '<td>' + userName + '</td>'
+    }
+    page += '</th>'
+
+    for (var folderID in galleryFolders) {
+      page += '<tr><td>' + galleryFolders[folderID] + '</td>'
+
+      for (var userId in users) {
+        page += '<td><input type="button" name="' + galleryFolders[folderID] + '|' + userId + '" value="'
+        if (galleries[userId] !== undefined &&
+            (galleryFolders[folderID] in galleries[userId]) &&
+            galleries[userId][galleryFolders[folderID]]) {
+          page += 'true'
         } else {
-          return ''
+          page += 'false'
+        }
+        page += '" onclick="toggle(this)"></td>'
+      }
+
+      page += '<tr>'
+    }
+    page += '</table></body>'
+
+    res.contentType('text/html')
+    res.send(page)
+  } else {
+    res.send('403 Forbidden')
+  }
+})
+
+httpListener.use('/adminset', function (req, res) {
+  if (sessions[req.signedCookies.sid] === 'admin') {
+    if (!(req.body.user in galleries)) {
+      galleries[req.body.user] = {}
+    }
+    if (req.body.value === 'true') {
+      galleries[req.body.user][req.body.gallery] = true
+    } else {
+      galleries[req.body.user][req.body.gallery] = false
+    }
+
+    fs.writeFile('config/galleries.json', JSON.stringify(galleries), function (err) {
+      if (err) {
+        console.log('error writing gallery info: ' + err)
+      }
+      console.log('gallery info saved')
+      console.log(JSON.stringify(galleries))
+    })
+  }
+})
+
+httpListener.use('/download', function (req, res) {
+  var galleryName = decodeURI(req.url).substring(1)
+  if (galleryName.slice(-4) === '.zip') {
+    galleryName = galleryName.substring(0, galleryName.length - 4)
+  }
+  if (galleries[sessions[req.signedCookies.sid]][galleryName]) {
+    res.sendFile(galleryName + '.zip', { root: path.join(privateConfig.cachePath, 'zip', galleryName.substring(0, 4)) })
+  } else {
+    res.send('403 Forbidden')
+  }
+})
+
+httpListener.use('/original', function (req, res) {
+  var filePath = decodeURI(req.url).substring(1).split('/')
+  if (galleries[sessions[req.signedCookies.sid]][filePath[0]]) {
+    res.sendFile(filePath[1], { root: path.join(privateConfig.originalsPath, filePath[0].substring(0, 4), filePath[0]) })
+  } else {
+    res.send('403 Forbidden')
+  }
+})
+
+httpListener.use('/small', function (req, res) {
+  var filePath = decodeURI(req.url).substring(1).split('/')
+  if (galleries[sessions[req.signedCookies.sid]][filePath[0]]) {
+    res.sendFile(filePath[1], { root: path.join(privateConfig.cachePath, 'small', filePath[0].substring(0, 4), filePath[0]) })
+  } else {
+    res.send('403 Forbidden')
+  }
+})
+
+httpListener.use('/thumb', function (req, res) {
+  var filePath = decodeURI(req.url).substring(1).split('/')
+  if (galleries[sessions[req.signedCookies.sid]][filePath[0]]) {
+    res.sendFile(filePath[1], { root: path.join(privateConfig.cachePath, 'thumb', filePath[0].substring(0, 4), filePath[0]) })
+  } else {
+    res.send('403 Forbidden')
+  }
+})
+
+httpListener.use('/', function (req, res) {
+  var galleryName = decodeURI(req.url).substring(1)
+  if (galleryName.length === 0 || galleryName === 'logout') {
+    sendMainList(res, sessions[req.signedCookies.sid])
+  } else {
+    sendGalleryList(res, sessions[req.signedCookies.sid], galleryName)
+  }
+})
+
+function sendLoginPage (res, message) {
+  fs.readFile('template/login.html', 'utf-8', function (err, data) {
+    if (err) {
+      res.send('404')
+    } else {
+      res.contentType('text/html')
+      res.send(data.replace('{{m}}', message))
+    }
+  })
+}
+
+function sendSettingsPage (res, userName, message1, message2) {
+  fs.readFile('template/settings.html', 'utf-8', function (err, data) {
+    if (err) {
+      res.send('404')
+    } else {
+      res.contentType('text/html')
+      data = data.replace(/{{username}}/g, userName)
+      data = data.replace('{{errormsg1}}', message1)
+      data = data.replace('{{errormsg2}}', message2)
+      if (users[userName]) {
+        data = data.replace('{{usermail}}', users[userName].mail)
+      }
+      res.send(data)
+    }
+  })
+}
+
+function sendMainList (res, userName) {
+  fs.readFile('template/mainlist.html', 'utf-8', function (err, data) {
+    if (err) {
+      res.send('404')
+    } else {
+      var listElement = ''
+      for (var galleryName in galleries[userName]) {
+        if (galleries[userName][galleryName]) {
+          listElement += '<li><a href="/' + galleryName + '"><span class="listlink">' +
+          '<span class="listdate">' + galleryName.substring(0, 10) + '</span>' +
+          '<span class="listtitle">' + galleryName.substring(11) + '</span></span></a>' +
+          '<a href="/download/' + galleryName + '.zip"><i class="mdi mdi-download listdl btn"></i></a></li>'
         }
       }
 
-      /* $echo .= 'cat: <span class="cmd ls_'.$dat.'">'.$dat.'</span>: Is a directory';
-        else
-          $echo .= file_get_contents(realpath($dat));
-      else
-        $echo .= 'cat: cannot access '.$dat.': No such file';
-          break;*/
-    case 'clear': return '{clear}'
-    case 'echo': return dat
-    case 'emacs': return 'emacs is not available, try <span class="cmd vi">vi</span>.'
-    case 'ls':
-      if (dat === '-h' || dat === '-help' || dat === '--help') {
-        return 'ls DIRECTORY - list all files with DIRECTORY'
+      res.contentType('text/html')
+      res.send(data.replace('{{username}}', userName).replace('{{list}}', listElement))
+    }
+  })
+}
+
+function sendGalleryList (res, userName, galleryName) {
+  if (!galleries[userName][galleryName]) {
+    res.send('403 Forbidden')
+  } else {
+    fs.readFile('template/photolist.html', 'utf-8', function (err, data) {
+      if (err) {
+        res.send('404')
       } else {
-        var dir = path.join('files/', dat)
-        console.log('aaa' + path.dirname(dir))
-        if (path.dirname(dir).substring(0, 5) === 'files') {
-          try {
-            return fs.readdirSync(dir)
-          } catch (err) {
-            return 'no such directory'
+        fs.readdir(privateConfig.originalsPath + path.sep + galleryName.substring(0, 4) + path.sep + galleryName, function (err, files) {
+          if (err) throw err
+          var listElement = ''
+          for (var i in files) {
+            if (files[i].slice(-4) === '.jpg' || files[i].slice(-4) === '.jpeg') {
+              listElement += '<a class="thumb" href="/small/' + galleryName + '/' + files[i] + '" onclick="return viewer.show()">' +
+                '<img src="/thumb/' + galleryName + '/' + files[i] + '" alt="" /></a>'
+            } else {
+              listElement += '<a class="thumb" href="/original/' + galleryName + '/' + files[i] + '" onclick="return viewer.show()">' +
+                files[i] + '</a>'
+            }
           }
-        } else {
-          return ''
-        }
+          res.contentType('text/html')
+          res.send(data.replace('{{username}}', userName).replace('{{list}}', listElement))
+        })
       }
-    case 'make':
-      if (dat === 'me a sandwich') return 'What? Make it yourself.'
-      else return 'make: *** No rule to make target \'' + cmd + '\'.  Stop.'
-    case 'stats': return 'comming soon'
-    case 'sudo':
-      if (dat === 'make me a sandwich') return 'Okay.'
-      else return 'username is not in the sudoers file. This incident will be reported.'
-    case 'test': return 'true'
-    case 'vi': return 'vi is not available, try <span class="cmd emacs">emacs</span>.'
-    case 'vim': return 'vim is not available, try <span class="cmd emacs">emacs</span>.'
-    default: return '<span class="error">Could not understand command "' + query + '", try <span class="cmd help">help</span>.</span>'
+    })
   }
 }
 
@@ -165,33 +313,34 @@ function startHttpListener (callback) {
   })
 }
 
-/* function connectNetwork () {
-  knownHosts.forEach(function (node) {
-    var request = http.request({ host: node.host + ':' + node.port, path: '/network' }, function (response) {
-      var page = ''
+startHttpListener(function () {})
 
-      response.on('data', function (chunk) {
-        page += chunk
-      })
+// file system backend
+var galleryFolders = []
 
-      response.on('end', function () {
-        if (page === 'ok') {
-          node.connected = true
-        } else {
-          console.log('unexpected reply ' + page)
+fs.readdir(privateConfig.originalsPath, function (err, files) {
+  if (err) throw err
+  for (var i in files) {
+    if (files[i].substring(0, 1) !== '.') {
+      var albumFiles = fs.readdirSync(privateConfig.originalsPath + path.sep + files[i])
+      for (var j in albumFiles) {
+        if (albumFiles[j].substring(0, 1) !== '.') {
+          galleryFolders.push(albumFiles[j])
         }
-      })
-    })
-    request.on('error', function (err) {
-      if(err.errno === 'ENOTFOUND')
-        node.online = false
-      else
-        logger.error(err)
-    })
-    request.end()
+      }
+    }
+  }
+})
+
+function logSession (sessionId, start) {
+  var session = {}
+  session.time = new Date()
+  session.sid = sessionId
+  session.user = sessions[sessionId]
+  session.start = start
+
+  fs.appendFile('log/session/' + dateFormat(new Date(), 'yyyy-mm-dd') + '.json', JSON.stringify(session) + ',', function (err) {
+    if (err) throw err
   })
 }
 
-startHttpListener(connectNetwork)*/
-
-startHttpListener(function () {})
