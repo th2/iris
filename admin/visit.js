@@ -55,19 +55,24 @@ router.use('/', function (req, res) {
   dateFormat(today, 'yyyy-mm-dd') +
   ' <a href="' + tomorrow + '">' + dateFormat(tomorrow, 'yyyy-mm-dd') + '</a><br><table>'
 
-  var visits = JSON.parse('[' +
+  var visits = {}
+  try {
+    visits = JSON.parse('[' +
     fs.readFileSync('log/visit/' + dateFormat(today, 'yyyy-mm-dd') + '.json').slice(0, -1) + ']')
-  visits.forEach(function (entry) {
-    response += '<tr>' +
-      '<td>' + new Date(entry.date).toISOString() + '</td>' +
-      '<td>' + entry.url
-    if (Object.keys(entry.body).length !== 0) {
-      response += ' ' + util.inspect(entry.body)
-    }
-    response += '</td>' +
-      '<td>' + util.inspect(entry.cookie) + '</td>' +
-      '<td><input type="text" name="details" value="' + util.inspect(entry.headers) + '"></td></tr>'
-  })
+    visits.forEach(function (entry) {
+      response += '<tr>' +
+        '<td>' + new Date(entry.date).toISOString() + '</td>' +
+        '<td>' + entry.url
+      if (Object.keys(entry.body).length !== 0) {
+        response += ' ' + util.inspect(entry.body)
+      }
+      response += '</td>' +
+        '<td>' + util.inspect(entry.cookie) + '</td>' +
+        '<td><input type="text" name="details" value="' + util.inspect(entry.headers) + '"></td></tr>'
+    })
+  } catch (err) {
+    console.log('no log file:' + err)
+  }
   response += '</table>'
   res.send(response)
 })
