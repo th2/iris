@@ -6,13 +6,14 @@ var dateFormat = require('dateformat')
 var logger = {}
 
 // logger
-logger.visitor = function (req) {
+logger.visitor = function (req, user) {
   var visit = {}
   visit.date = Date.now()
   visit.url = req.url
   visit.method = req.method
   visit.body = req.body
   visit.cookie = req.signedCookies
+  visit.user = user
   visit.headers = req.headers
 
   fs.appendFile('log/visit/' + dateFormat(new Date(), 'yyyy-mm-dd') + '.json', JSON.stringify(visit) + ',', function (err) {

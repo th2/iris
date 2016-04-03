@@ -67,6 +67,7 @@ router.use('/', function (req, res) {
         response += ' ' + util.inspect(entry.body)
       }
       response += '</td>' +
+        '<td>' + entry.user + '</td>' +
         '<td>' + util.inspect(entry.cookie) + '</td>' +
         '<td><input type="text" name="details" value="' + util.inspect(entry.headers) + '"></td></tr>'
     })

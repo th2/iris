@@ -37,7 +37,7 @@ httpListener.use(function (req, res, next) {
     var random = Math.random().toString(36).substring(2) + Date.now().toString(36)
     res.cookie('sid', random, { maxAge: 31536000, httpOnly: true, signed: true })
   }
-  logger.visitor(req)
+  logger.visitor(req, sessions[req.signedCookies.sid])
   next()
 })
 
@@ -48,7 +48,6 @@ httpListener.use('/logout', function (req, res, next) {
     next()
   } else {
     // perform logout
-    logSession(req.signedCookies.sid, false)
     delete sessions[req.signedCookies.sid]
     sendLoginPage(res, 'Logout successful.')
   }
@@ -64,7 +63,6 @@ httpListener.use(function (req, res, next) {
     var passHMAC = crypto.createHmac('sha512', privateConfig.passHMAC).update(req.body.password).digest('base64')
     if (users[req.body.name.toLowerCase()] && users[req.body.name.toLowerCase()].pass === passHMAC) {
       sessions[req.signedCookies.sid] = req.body.name.toLowerCase()
-      logSession(req.signedCookies.sid, true)
       // corrent credentials
       next()
     } else {
@@ -144,7 +142,7 @@ httpListener.use('/admin', function (req, res) {
     res.contentType('text/html')
     res.send(page)
   } else {
-    res.send('403 Forbidden')
+    res.send('403 Forbidden 1')
   }
 })
 
@@ -177,7 +175,7 @@ httpListener.use('/download', function (req, res) {
   if (galleries[sessions[req.signedCookies.sid]][galleryName]) {
     res.sendFile(galleryName + '.zip', { root: path.join(privateConfig.cachePath, 'zip', galleryName.substring(0, 4)) })
   } else {
-    res.send('403 Forbidden')
+    res.send('403 Forbidden 2')
   }
 })
 
@@ -186,7 +184,7 @@ httpListener.use('/original', function (req, res) {
   if (galleries[sessions[req.signedCookies.sid]][filePath[0]]) {
     res.sendFile(filePath[1], { root: path.join(privateConfig.originalsPath, filePath[0].substring(0, 4), filePath[0]) })
   } else {
-    res.send('403 Forbidden')
+    res.send('403 Forbidden 3')
   }
 })
 
@@ -195,7 +193,7 @@ httpListener.use('/small', function (req, res) {
   if (galleries[sessions[req.signedCookies.sid]][filePath[0]]) {
     res.sendFile(filePath[1], { root: path.join(privateConfig.cachePath, 'small', filePath[0].substring(0, 4), filePath[0]) })
   } else {
-    res.send('403 Forbidden')
+    res.send('403 Forbidden 4')
   }
 })
 
@@ -204,7 +202,7 @@ httpListener.use('/thumb', function (req, res) {
   if (galleries[sessions[req.signedCookies.sid]][filePath[0]]) {
     res.sendFile(filePath[1], { root: path.join(privateConfig.cachePath, 'thumb', filePath[0].substring(0, 4), filePath[0]) })
   } else {
-    res.send('403 Forbidden')
+    res.send('403 Forbidden 5')
   }
 })
 
@@ -268,7 +266,7 @@ function sendMainList (res, userName) {
 
 function sendGalleryList (res, userName, galleryName) {
   if (!galleries[userName][galleryName]) {
-    res.send('403 Forbidden')
+    res.send('403 Forbidden 6')
   } else {
     fs.readFile('template/photolist.html', 'utf-8', function (err, data) {
       if (err) {
@@ -331,16 +329,3 @@ fs.readdir(privateConfig.originalsPath, function (err, files) {
     }
   }
 })
-
-function logSession (sessionId, start) {
-  var session = {}
-  session.time = new Date()
-  session.sid = sessionId
-  session.user = sessions[sessionId]
-  session.start = start
-
-  fs.appendFile('log/session/' + dateFormat(new Date(), 'yyyy-mm-dd') + '.json', JSON.stringify(session) + ',', function (err) {
-    if (err) throw err
-  })
-}
-
