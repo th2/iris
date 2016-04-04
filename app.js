@@ -8,7 +8,6 @@ var cookieParser = require('cookie-parser')
 var bodyParser = require('body-parser')
 var path = require('path')
 var crypto = require('crypto')
-var dateFormat = require('dateformat')
 var logger = require('./logger')
 
 var privateConfig = require('./config/private')
