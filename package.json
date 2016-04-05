@@ -1,10 +1,26 @@
 {
   "name": "iris",
   "version": "0.1.0",
-  "description": "central node",
+  "description": "Image gallery and file hosting server",
+  "homepage": "https://github.com/th2/iris",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/th2/iris.git"
+  },
+  "author": {
+    "name": "Thorben Hehmann",
+    "email": "irisnode@hehmann.com",
+    "url": "http://www.hehmann.com/"
+  },
+  "license": "Apache-2.0",
   "main": "app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "Thorben Hehmann"
+  "dependencies": {
+    "body-parser": "^1.15.0",
+    "cookie-parser": "^1.4.0",
+    "dateformat": "1.0.12",
+    "express": "^4.13.4"
+  }
 }

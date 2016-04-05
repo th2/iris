@@ -2,12 +2,14 @@
 var httpListenerPort = 80
 
 // includes
-var fs = require('fs')
-var express = require('express')
-var cookieParser = require('cookie-parser')
-var bodyParser = require('body-parser')
-var path = require('path')
 var crypto = require('crypto')
+var fs = require('fs')
+var path = require('path')
+
+var bodyParser = require('body-parser')
+var cookieParser = require('cookie-parser')
+var express = require('express')
+
 var logger = require('./logger')
 
 var privateConfig = require('./config/private')
