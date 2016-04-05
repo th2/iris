@@ -29,7 +29,7 @@ httpListener.use(bodyParser.json())
 
 // admin panel
 var visit = require('./admin/visit')
-httpListener.use('/admin', visit)
+httpListener.use('/admin/visit', visit)
 
 // access logging
 httpListener.use(function (req, res, next) {
@@ -62,6 +62,7 @@ httpListener.use(function (req, res, next) {
   } else if (req.body.name) {
     // user sent credentials
     var passHMAC = crypto.createHmac('sha512', privateConfig.passHMAC).update(req.body.password).digest('base64')
+    console.log(passHMAC)
     if (users[req.body.name.toLowerCase()] && users[req.body.name.toLowerCase()].pass === passHMAC) {
       sessions[req.signedCookies.sid] = req.body.name.toLowerCase()
       // corrent credentials
@@ -112,14 +113,14 @@ httpListener.use('/settings', function (req, res) {
   sendSettingsPage(res, sessions[req.signedCookies.sid], '', '')
 })
 
-httpListener.use('/admin', function (req, res) {
+httpListener.use('/admin/access', function (req, res) {
   if (sessions[req.signedCookies.sid] === 'admin') {
     var page = fs.readFileSync('template/photoadmin.html')
-    page += '<table border="1"><th>'
+    page += '<section class="access-section"><div class="access-container"><table><tr><th><div>Gallery</div></th>'
     for (var userName in users) {
-      page += '<td>' + userName + '</td>'
+      page += '<th>' + userName + '<div>' + userName + '</div></th>'
     }
-    page += '</th>'
+    page += '</tr>'
 
     for (var folderID in galleryFolders) {
       page += '<tr><td>' + galleryFolders[folderID] + '</td>'
