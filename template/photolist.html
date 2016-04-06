@@ -136,8 +136,7 @@ function faster() {
 	player = setInterval(function(){ show(++currentId) }, playSpeed)
 }
 
-
-function download() {
+function downloadOriginal() {
 	pause()
 	window.open('/original/' + galleryName + '/' + fileNames[currentId])
 }
@@ -153,20 +152,19 @@ function show(fileId) {
 	return false
 }
 
-function close() {
+function closeImage() {
 	pause()
 	document.getElementById("imageview-container").style.display = 'none'
-	return false
 }
 
 window.onkeyup = function(e) {
 	var key = e.keyCode ? e.keyCode : e.which
-	if(key === 68) download() // d
+	if(key === 68) downloadOriginal() // d
 	else if(key === 37) show(--currentId) // left arrow
 	else if(key === 80) play() // p
 	else if(key === 39) show(--currentId) // right arrow
-	else if(key === 27) close() // escape
-	else if(key === 88) close() // x
+	else if(key === 27) closeImage() // escape
+	else if(key === 88) closeImage() // x
 }
 </script>
 </head><body>
@@ -179,18 +177,18 @@ window.onkeyup = function(e) {
 </div>
 
 <div id="imageview-container"><div id="imageview-nav">
-	<a href="javascript:download()"><i class="mdi mdi-download btn"></i></a>
+	<a href="#" onclick="downloadOriginal()"><i class="mdi mdi-download btn"></i></a>
 	<span id="imageview-play">
-		<a href="javascript:show(--currentId)"><i class="mdi mdi-chevron-left btn"></i></a>
-		<a href="javascript:play()"><i class="mdi mdi-play btn"></i></a>
-	<a href="javascript:show(++currentId)"><i class="mdi mdi-chevron-right btn"></i></a>
+		<a href="#" onclick="show(--currentId)"><i class="mdi mdi-chevron-left btn"></i></a>
+		<a href="#" onclick="play()"><i class="mdi mdi-play btn"></i></a>
+	<a href="#" onclick="show(++currentId)"><i class="mdi mdi-chevron-right btn"></i></a>
 	</span>
 	<span id="imageview-pause">
-		<a href="javascript:slower()"><i class="mdi mdi-minus btn"></i></a>
-		<a href="javascript:pause()"><i class="mdi mdi-pause btn"></i></a>
-		<a href="javascript:faster()"><i class="mdi mdi-plus btn"></i></a>
+		<a href="#" onclick="slower()"><i class="mdi mdi-minus btn"></i></a>
+		<a href="#" onclick="pause()"><i class="mdi mdi-pause btn"></i></a>
+		<a href="#" onclick="faster()"><i class="mdi mdi-plus btn"></i></a>
 	</span>
-	<a href="javascript:close()"><i class="mdi mdi-close btn"></i></a>
+	<a href="#" onclick="closeImage()"><i class="mdi mdi-close btn"></i></a>
 </div>
-<a href="javascript:close()"><img id="imageview-image" src="" alt="" /></a></div>
+<a href="#" onclick="closeImage()"><img id="imageview-image" src="" alt="" /></a></div>
 </body></html>
