@@ -1,58 +1,61 @@
-<!DOCTYPE html><html><head><meta charset="utf-8"/><title>Fotos</title>
-<meta name=viewport content="width=device-width, initial-scale=1">
-<link href="css/materialdesignicons.min.css" media="all" rel="stylesheet" type="text/css" />
-<style>
-body{
-	font-family: 'Helvetica Neue',Helvetica,Arial,sans-serif;
-	margin: 0px;
-	padding: 0px;
-	color: #000;
-	background-color: #EFEFEF;
-	text-align: center;
+html, body{
+  font-family: 'Helvetica Neue',Helvetica,Arial,sans-serif;
+  margin: 0px;
+  padding: 0px;
+  color: #000;
+  background-color: #EFEFEF;
 }
 a {
-	color: #000;
+  color: #000;
 }
 .btntext {
-	display: none;
+  display: none;
 }
 .btn:hover .btntext {
-	font-family: 'Helvetica Neue',Helvetica,Arial,sans-serif;
-	margin-left: 5px;
-	display: inline-block;
+  font-family: 'Helvetica Neue',Helvetica,Arial,sans-serif;
+  margin-left: 5px;
+  display: inline-block;
 }
 #top {
-	min-height: 45px;
-	color: #FFF;
-	background-color: #2196F3;
-	padding: 0px;
-	margin: 0px;
-	box-shadow: 0px 2px 5px 0px rgba(0, 0, 0, 0.16), 0px 2px 10px 0px rgba(0, 0, 0, 0.12);
+  height: 58px;
+  color: #FFF;
+  background-color: #2196F3;
+  padding: 0px;
+  margin: 0px;
+  box-shadow: 0px 2px 5px 0px rgba(0, 0, 0, 0.16), 0px 2px 10px 0px rgba(0, 0, 0, 0.12);
 }
 #top a {
-	color: #FFF;
+  color: #FFF;
 }
 #toptitle {
-	display: inline-block;
-	padding: 15px;
-	background-color: #2196F3;
-	font-size: 1.4em;
-	font-weight: 100;
+  display: inline-block;
+  padding: 15px;
+  background-color: #2196F3;
+  font-size: 1.4em;
+  font-weight: 100;
 }
 #topuser {
-	float: right;
-	font-weight: 200;
+  float: right;
+  font-weight: 200;
 }
 #top .btn {
-	margin: 0px;
-	margin-left: 5px;
-	display: inline-block;
-	padding: 20px;
+  height: 18px;
+  margin: 0px;
+  margin-left: 5px;
+  display: inline-block;
+  padding: 20px;
 }
 #top .btn:hover {
-	background-color: #1976D2;
+  background-color: #1976D2;
+}
+#top .mdi-keyboard-backspace {
+  margin-left: 0px;
+  float: left;
 }
 
+.center {
+  text-align: center;
+}
 h1, input::-webkit-input-placeholder, button {
   font-family: 'roboto', sans-serif;
   -webkit-transition: all 0.3s ease-in-out;
@@ -69,15 +72,18 @@ h1 {
   box-shadow: 0 2px 5px 1px rgba(0, 0, 0, 0.2);
 }
 form {
+  display: inline-block;
   box-sizing: border-box;
   background-color: #FFF;
   width: 260px;
-  margin: 100px auto 0;
+  margin: 70px;
   box-shadow: 2px 2px 5px 1px rgba(0, 0, 0, 0.2);
-  padding-bottom: 30px;
+  padding-bottom: 40px;
   border-radius: 3px;
 }
 form h1 {
+  margin: 0px;
+  margin-bottom: 20px;
   box-sizing: border-box;
   padding: 20px;
 }
@@ -117,7 +123,7 @@ button {
   padding: 6px;
   width: 200px;
   color: white;
-  margin-left: 0px;
+  margin: 0px;
   box-shadow: 0 3px 6px 0 rgba(0, 0, 0, 0.2);
 }
 button:hover {
@@ -134,18 +140,3 @@ button:hover {
 .subtext a{
   color: #1abc9c;
 }
-</style>
-<script type="text/javascript"></script>
-</head><body>
-<div id="top"><span id="toptitle">Fotos</span><span id="topuser"></span></div>
-
-<form action="{{returnpage}}" method="post">
-  <h1>password reset</h1>
-  {{errormsg}}
-  <input placeholder="Name" name="name" required="" type="text">
-  <input placeholder="Mail" name="mail" required="" type="text">
-  <button>Submit</button>
-  <div class="subtext"><a href="/">Back to login</a></div>
-</form> 
-
-</body></html>

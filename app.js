@@ -62,7 +62,7 @@ httpListener.use(function (req, res, next) {
   } else if (req.body.name) {
     // user sent credentials
     var passHMAC = crypto.createHmac('sha512', privateConfig.passHMAC).update(req.body.password).digest('base64')
-    console.log(req.body.name + ': ' + passHMAC)
+    // console.log(req.body.name + ': ' + passHMAC)
     if (users[req.body.name.toLowerCase()] && users[req.body.name.toLowerCase()].pass === passHMAC) {
       sessions[req.signedCookies.sid] = req.body.name.toLowerCase()
       // corrent credentials
@@ -209,92 +209,118 @@ httpListener.use('/thumb', function (req, res) {
 })
 
 httpListener.use('/', function (req, res) {
-  var galleryName = decodeURI(req.url).substring(1)
-  if (galleryName.length === 0 || galleryName === 'logout') {
-    sendMainList(res, sessions[req.signedCookies.sid])
+  var gallerySelected = decodeURI(req.url).substring(1)
+  if (gallerySelected.length === 0 || gallerySelected === 'logout') {
+    // send list of available galleries
+    var userName = sessions[req.signedCookies.sid]
+    var content = '<div class="6"><ul class="listmain">'
+    for (var galleryName in galleries[userName]) {
+      if (galleries[userName][galleryName]) {
+        content += '<li><a href="/' + galleryName + '"><span class="listlink">' +
+        '<span class="listdate">' + galleryName.substring(0, 10) + '</span>' +
+        '<span class="listtitle">' + galleryName.substring(11) + '</span></span></a>' +
+        '<a href="/download/' + galleryName + '.zip"><i class="mdi mdi-download listdl btn"></i></a></li>'
+      }
+    }
+    content += '</ul></div>'
+
+    sendPage(res, '<link rel="stylesheet" type="text/css" href="/css/mainlist.css" media="all">', content, userName)
   } else {
-    sendGalleryList(res, sessions[req.signedCookies.sid], galleryName)
+    sendGalleryList(res, sessions[req.signedCookies.sid], gallerySelected)
   }
 })
 
-function sendLoginPage (res, message) {
-  fs.readFile('template/login.html', 'utf-8', function (err, data) {
+function sendPage (res, head, content, user) {
+  fs.readFile('template/frame.html', 'utf-8', function (err, data) {
     if (err) {
       res.send('404')
     } else {
+      var nav = ''
+      if (user) {
+        nav += '<div id="top"><a class="btnback" href="/"><i class="mdi mdi-keyboard-backspace btn"><span class="btntext">Back</span></i></a> ' +
+        '<span id="toptitle">Photos</span><span id="topuser">' + user +
+        '<a href="/settings"><i class="mdi mdi-settings btn"><span class="btntext">Settings</span></i></a> ' +
+        '<a href="/logout"><i class="mdi mdi-logout btn"><span class="btntext">Sign out</span></i></a></span></div>'
+      } else {
+        nav += '<div id="top"><span id="toptitle">Login</span><span id="topuser"></span></div>'
+      }
       res.contentType('text/html')
-      res.send(data.replace('{{m}}', message))
+      res.send(data.replace('{{head}}', head).replace('{{content}}', nav + content))
     }
   })
+}
+
+function sendLoginPage (res, message) {
+  var content = '<div class="center"><form method="post">' +
+    '<h1>login</h1>' + message +
+    '<input placeholder="Name" name="name" required="" type="text">' +
+    '<input placeholder="Password" name="password" required="" type="password">' +
+    '<button>Submit</button>' +
+    '<div class="subtext"><a href="/resetpassword">Forgot your password?</a></div>' +
+    '</form></div>'
+  sendPage(res, '', content, false)
 }
 
 function sendSettingsPage (res, userName, message1, message2) {
-  fs.readFile('template/settings.html', 'utf-8', function (err, data) {
-    if (err) {
-      res.send('404')
-    } else {
-      res.contentType('text/html')
-      data = data.replace(/{{username}}/g, userName)
-      data = data.replace('{{errormsg1}}', message1)
-      data = data.replace('{{errormsg2}}', message2)
-      if (users[userName]) {
-        data = data.replace('{{usermail}}', users[userName].mail)
-      }
-      res.send(data)
-    }
-  })
-}
-
-function sendMainList (res, userName) {
-  fs.readFile('template/mainlist.html', 'utf-8', function (err, data) {
-    if (err) {
-      res.send('404')
-    } else {
-      var listElement = ''
-      for (var galleryName in galleries[userName]) {
-        if (galleries[userName][galleryName]) {
-          listElement += '<li><a href="/' + galleryName + '"><span class="listlink">' +
-          '<span class="listdate">' + galleryName.substring(0, 10) + '</span>' +
-          '<span class="listtitle">' + galleryName.substring(11) + '</span></span></a>' +
-          '<a href="/download/' + galleryName + '.zip"><i class="mdi mdi-download listdl btn"></i></a></li>'
-        }
-      }
-
-      res.contentType('text/html')
-      res.send(data.replace('{{username}}', userName).replace('{{list}}', listElement))
-    }
-  })
+  var content = '<div class="center"><form method="post">' +
+    '<h1>change password</h1>' + message1 +
+    '<input placeholder="Name" name="name" required="" type="text" value="' + userName + '" disabled>' +
+    '<input placeholder="Old Password" name="password1" required="" type="password">' +
+    '<input placeholder="New Password" name="password2" required="" type="password">' +
+    '<button>Submit</button>' +
+    '</form>' +
+    '<form method="post">' +
+    '<h1>change mail</h1>' + message2 +
+    '<input placeholder="Name" name="name" required="" type="text" value="' + userName + '" disabled>' +
+    '<input placeholder="Current Password" name="password1" required="" type="password">' +
+    '<input placeholder="New Mail" name="mail" required="" type="text" value="' + users[userName].mail + '">' +
+    '<button>Submit</button>' +
+    '</form></div>'
+  sendPage(res, '', content, userName)
 }
 
 function sendGalleryList (res, userName, galleryName) {
   if (!galleries[userName][galleryName]) {
     res.send('403 Forbidden 6')
   } else {
-    fs.readFile('template/photolist.html', 'utf-8', function (err, data) {
-      if (err) {
-        res.send('404')
-      } else {
-        fs.readdir(privateConfig.originalsPath + path.sep + galleryName.substring(0, 4) + path.sep + galleryName, function (err, files) {
-          if (err) throw err
-          var listElement = ''
-          var fileNames = ''
-          var fileId = 0
-          for (var i in files) {
-            if (files[i].slice(-4) === '.jpg' || files[i].slice(-4) === '.jpeg') {
-              fileNames += "'" + files[i] + "', "
-              listElement += '<a class="thumb" href="/small/' + galleryName + '/' + files[i] + '" onclick="return show(\'' + fileId++ + '\')">' +
+    fs.readdir(privateConfig.originalsPath + path.sep + galleryName.substring(0, 4) + path.sep + galleryName, function (err, files) {
+      if (err) throw err
+      var content = '<div class="listbox"><ul class="listmain">'
+      var fileNames = ''
+      var fileId = 0
+
+      for (var i in files) {
+        if (files[i].slice(-4) === '.jpg' || files[i].slice(-4) === '.jpeg') {
+          fileNames += "'" + files[i] + "', "
+          content += '<a class="thumb" href="/small/' + galleryName + '/' + files[i] + '" onclick="return show(\'' + fileId++ + '\')">' +
                 '<img src="/thumb/' + galleryName + '/' + files[i] + '" alt="" /></a>'
-            } else {
-              listElement += '<a class="thumb" href="/original/' + galleryName + '/' + files[i] + '">' +
-                files[i] + '</a>'
-            }
-          }
-          res.contentType('text/html')
-          res.send(data.replace('{{username}}', userName)
-            .replace('{{galleryname}}', galleryName).replace('{{filenames}}', fileNames)
-            .replace('{{list}}', listElement))
-        })
+        } else {
+          content += '<a class="thumb" href="/original/' + galleryName + '/' + files[i] + '">' + files[i] + '</a>'
+        }
       }
+
+      content += '</ul></div>' +
+        '<div id="imageview-container"><div id="imageview-nav">' +
+          '<a href="#" onclick="downloadOriginal()"><i class="mdi mdi-download btn"></i></a>' +
+          '<span id="imageview-play">' +
+            '<a href="#" onclick="show(--currentId)"><i class="mdi mdi-chevron-left btn"></i></a>' +
+            '<a href="#" onclick="play()"><i class="mdi mdi-play btn"></i></a>' +
+          '<a href="#" onclick="show(++currentId)"><i class="mdi mdi-chevron-right btn"></i></a>' +
+          '</span>' +
+          '<span id="imageview-pause">' +
+            '<a href="#" onclick="slower()"><i class="mdi mdi-minus btn"></i></a>' +
+            '<a href="#" onclick="pause()"><i class="mdi mdi-pause btn"></i></a>' +
+            '<a href="#" onclick="faster()"><i class="mdi mdi-plus btn"></i></a>' +
+          '</span>' +
+          '<a href="#" onclick="closeImage()"><i class="mdi mdi-close btn"></i></a>' +
+        '</div>' +
+        '<a href="#" onclick="closeImage()"><img id="imageview-image" src="" alt="" /></a></div>'
+
+      sendPage(res, '<link href="/css/photoviewer.css" media="all" rel="stylesheet" type="text/css" />\n' +
+        '<script type="text/javascript">\n' +
+        'var galleryName = "' + galleryName + '"\n' +
+        'var fileNames = [' + fileNames + ']\n' +
+        '</script><script src="/photoviewer.js"></script>', content, userName)
     })
   }
 }
