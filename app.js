@@ -277,17 +277,22 @@ function sendGalleryList (res, userName, galleryName) {
         fs.readdir(privateConfig.originalsPath + path.sep + galleryName.substring(0, 4) + path.sep + galleryName, function (err, files) {
           if (err) throw err
           var listElement = ''
+          var fileNames = ''
+          var fileId = 0
           for (var i in files) {
             if (files[i].slice(-4) === '.jpg' || files[i].slice(-4) === '.jpeg') {
-              listElement += '<a class="thumb" href="/small/' + galleryName + '/' + files[i] + '" onclick="return viewer.show()">' +
+              fileNames += "'" + files[i] + "', "
+              listElement += '<a class="thumb" href="/small/' + galleryName + '/' + files[i] + '" onclick="return show(\'' + fileId++ + '\')">' +
                 '<img src="/thumb/' + galleryName + '/' + files[i] + '" alt="" /></a>'
             } else {
-              listElement += '<a class="thumb" href="/original/' + galleryName + '/' + files[i] + '" onclick="return viewer.show()">' +
+              listElement += '<a class="thumb" href="/original/' + galleryName + '/' + files[i] + '">' +
                 files[i] + '</a>'
             }
           }
           res.contentType('text/html')
-          res.send(data.replace('{{username}}', userName).replace('{{list}}', listElement))
+          res.send(data.replace('{{username}}', userName)
+            .replace('{{galleryname}}', galleryName).replace('{{filenames}}', fileNames)
+            .replace('{{list}}', listElement))
         })
       }
     })
@@ -308,7 +313,7 @@ function startHttpListener (callback) {
       }
       startHttpListener(callback)
     } else {
-      logger.error(err)
+      logger.exception(err)
     }
   })
 }

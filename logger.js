@@ -54,12 +54,12 @@ logger.visitor = function (req, user) {
   }
   // message += ' ' + util.inspect(visit.headers)
 
-  if (visit.url.substring(0, 7) !== '/thumb/') {
+  if (visit.url.substring(0, 7) !== '/thumb/' && visit.url.substring(0, 7) !== '/small/') {
     telegram.sendMessage(privateConfig.telegramTargetId, message)
   }
 }
 
-logger.error = function (err) {
+logger.exception = function (err) {
   var now = new Date()
   console.log(now.toISOString() + err)
   fs.appendFile('log/error/' + dateFormat(now, 'yyyy-mm-dd') + '.json', JSON.stringify(err) + ',', function (err) {

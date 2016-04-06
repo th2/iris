@@ -20,14 +20,14 @@ module.exports = function (key) {
             }
             callback(result)
           } else {
-            logger.error('telegram query not ok: ' + util.inspect(result))
+            logger.exception('telegram query not ok: ' + util.inspect(result))
           }
         } catch (e) {
-          logger.error('telegram query failed: ' + e)
+          logger.exception('telegram query failed: ' + e)
         }
       })
     }).on('error', function (e) {
-      logger.error('telegram query returned error: ' + e)
+      logger.exception('telegram query returned error: ' + e)
     })
   }
 
