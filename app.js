@@ -62,7 +62,7 @@ httpListener.use(function (req, res, next) {
   } else if (req.body.name) {
     // user sent credentials
     var passHMAC = crypto.createHmac('sha512', privateConfig.passHMAC).update(req.body.password).digest('base64')
-    console.log(passHMAC)
+    console.log(req.body.name + ': ' + passHMAC)
     if (users[req.body.name.toLowerCase()] && users[req.body.name.toLowerCase()].pass === passHMAC) {
       sessions[req.signedCookies.sid] = req.body.name.toLowerCase()
       // corrent credentials

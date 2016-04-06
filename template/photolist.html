@@ -161,11 +161,12 @@ function close() {
 
 window.onkeyup = function(e) {
 	var key = e.keyCode ? e.keyCode : e.which
-	if(key === 68) download()
-	else if(key === 37) show(--currentId)
-	// else if(key === 80) alert('play')
-	else if(key === 39) show(--currentId)
-	else if(key === 88) close()
+	if(key === 68) download() // d
+	else if(key === 37) show(--currentId) // left arrow
+	else if(key === 80) play() // p
+	else if(key === 39) show(--currentId) // right arrow
+	else if(key === 27) close() // escape
+	else if(key === 88) close() // x
 }
 </script>
 </head><body>
