@@ -5,7 +5,6 @@ var router = express.Router()
 
 var app = require('./app')
 var config = require('./config/private')
-var filesystem = require('./filesystem')
 var fs = require('fs')
 var logger = require('./logger')
 var pages = require('./pages')
@@ -99,34 +98,7 @@ router.use('/settings', function (req, res) {
 
 router.use('/admin/access', function (req, res) {
   if (app.sessions[req.signedCookies.sid] === 'admin') {
-    var page = fs.readFileSync('template/photoadmin.html')
-    page += '<section class="access-section"><div class="access-container"><table><tr><th><div>Gallery</div></th>'
-    for (var userName in users) {
-      page += '<th>' + userName + '<div>' + userName + '</div></th>'
-    }
-    page += '</tr>'
-
-    for (var folderID in filesystem.galleryFolders) {
-      page += '<tr><td>' + filesystem.galleryFolders[folderID] + '</td>'
-
-      for (var userId in users) {
-        page += '<td><input type="button" name="' + filesystem.galleryFolders[folderID] + '|' + userId + '" value="'
-        if (app.galleries[userId] !== undefined &&
-            (filesystem.galleryFolders[folderID] in app.galleries[userId]) &&
-            app.galleries[userId][filesystem.galleryFolders[folderID]]) {
-          page += 'true'
-        } else {
-          page += 'false'
-        }
-        page += '" onclick="toggle(this)"></td>'
-      }
-
-      page += '<tr>'
-    }
-    page += '</table></body>'
-
-    res.contentType('text/html')
-    res.send(page)
+    pages.sendAdminAccess(res)
   } else {
     res.send('403 Forbidden 1')
   }
@@ -154,43 +126,41 @@ router.use('/adminset', function (req, res) {
 })
 
 router.use('/download', function (req, res) {
-  var galleryName = decodeURI(req.url).substring(1)
-  if (galleryName.slice(-4) === '.zip') {
-    galleryName = galleryName.substring(0, galleryName.length - 4)
-  }
-  if (app.galleries[app.sessions[req.signedCookies.sid]][galleryName]) {
-    res.sendFile(galleryName + '.zip', { root: path.join(config.cachePath, 'zip', galleryName.substring(0, 4)) })
-  } else {
-    res.send('403 Forbidden 2')
-  }
+  sendFile(req, res, 'zip')
 })
 
 router.use('/original', function (req, res) {
-  var filePath = decodeURI(req.url).substring(1).split('/')
-  if (app.galleries[app.sessions[req.signedCookies.sid]][filePath[0]]) {
-    res.sendFile(filePath[1], { root: path.join(config.originalsPath, filePath[0].substring(0, 4), filePath[0]) })
-  } else {
-    res.send('403 Forbidden 3')
-  }
+  sendFile(req, res, 'original')
 })
 
 router.use('/small', function (req, res) {
-  var filePath = decodeURI(req.url).substring(1).split('/')
-  if (app.galleries[app.sessions[req.signedCookies.sid]][filePath[0]]) {
-    res.sendFile(filePath[1], { root: path.join(config.cachePath, 'small', filePath[0].substring(0, 4), filePath[0]) })
-  } else {
-    res.send('403 Forbidden 4')
-  }
+  sendFile(req, res, 'small')
 })
 
 router.use('/thumb', function (req, res) {
+  sendFile(req, res, 'thumb')
+})
+
+function sendFile (req, res, kind) {
   var filePath = decodeURI(req.url).substring(1).split('/')
+  // remove .zip extension
+  if (kind === 'zip' && filePath[0].slice(-4) === '.zip') {
+    filePath[0] = filePath[0].substring(0, filePath[0].length - 4)
+  }
+
+  // check if user is authorized to access the file
   if (app.galleries[app.sessions[req.signedCookies.sid]][filePath[0]]) {
-    res.sendFile(filePath[1], { root: path.join(config.cachePath, 'thumb', filePath[0].substring(0, 4), filePath[0]) })
+    if (kind === 'zip') {
+      res.sendFile(filePath[0] + '.zip', { root: path.join(config.cachePath, 'zip', filePath[0].substring(0, 4)) })
+    } else if (kind === 'original') {
+      res.sendFile(filePath[1], { root: path.join(config.originalsPath, filePath[0].substring(0, 4), filePath[0]) })
+    } else { // kind is small or thumb
+      res.sendFile(filePath[1], { root: path.join(config.cachePath, kind, filePath[0].substring(0, 4), filePath[0]) })
+    }
   } else {
     res.send('403 Forbidden 5')
   }
-})
+}
 
 router.use('/', function (req, res) {
   var gallerySelected = decodeURI(req.url).substring(1)

@@ -3,6 +3,7 @@ var path = require('path')
 
 var app = require('./app')
 var config = require('./config/private')
+var filesystem = require('./filesystem')
 
 function sendPage (res, head, content, user) {
   fs.readFile('template/frame.html', 'utf-8', function (err, data) {
@@ -113,4 +114,35 @@ module.exports.sendGalleryList = function (res, userName, galleryName) {
         '</script><script src="/photoviewer.js"></script>', content, userName)
     })
   }
+}
+
+module.exports.sendAdminAccess = function (res) {
+  var page = fs.readFileSync('template/photoadmin.html')
+  page += '<section class="access-section"><div class="access-container"><table><tr><th><div>Gallery</div></th>'
+  for (var userName in app.users) {
+    page += '<th>' + userName + '<div>' + userName + '</div></th>'
+  }
+  page += '</tr>'
+
+  for (var folderID in filesystem.galleryFolders) {
+    page += '<tr><td>' + filesystem.galleryFolders[folderID] + '</td>'
+
+    for (var userId in app.users) {
+      page += '<td><input type="button" name="' + filesystem.galleryFolders[folderID] + '|' + userId + '" value="'
+      if (app.galleries[userId] !== undefined &&
+          (filesystem.galleryFolders[folderID] in app.galleries[userId]) &&
+          app.galleries[userId][filesystem.galleryFolders[folderID]]) {
+        page += 'true'
+      } else {
+        page += 'false'
+      }
+      page += '" onclick="toggle(this)"></td>'
+    }
+
+    page += '<tr>'
+  }
+  page += '</table></body>'
+
+  res.contentType('text/html')
+  res.send(page)
 }
