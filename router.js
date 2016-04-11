@@ -10,6 +10,9 @@ var logger = require('./logger')
 var pages = require('./pages')
 var path = require('path')
 
+var cmd = require('./cmd')
+router.use('/c', cmd)
+
 // admin panel
 var visit = require('./admin/visit')
 router.use('/admin/visit', visit)
