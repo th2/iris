@@ -4,9 +4,6 @@ var util = require('util')
 var dateFormat = require('dateformat')
 var privateConfig = require('./config/private')
 
-// objects
-var logger = {}
-
 // Telegram Bot
 var Telegram = require('./telegram.js')
 var telegram = new Telegram(privateConfig.telegramKey)
@@ -25,7 +22,7 @@ function processMessages (messages) {
 telegram.getMessages(processMessages)
 
 // logger
-logger.visitor = function (req, user) {
+module.exports.visitor = function (req, user) {
   var visit = {}
   visit.date = Date.now()
   visit.url = req.url
@@ -59,12 +56,10 @@ logger.visitor = function (req, user) {
   }
 }
 
-logger.exception = function (err) {
+module.exports.exception = function (err) {
   var now = new Date()
-  console.log(now.toISOString() + err)
+  console.log(now.toISOString() + ' ' + err)
   fs.appendFile('log/error/' + dateFormat(now, 'yyyy-mm-dd') + '.json', JSON.stringify(err) + ',', function (err) {
     if (err) throw err
   })
 }
-
-module.exports = logger

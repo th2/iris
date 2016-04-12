@@ -10,9 +10,6 @@ var logger = require('./logger')
 var pages = require('./pages')
 var path = require('path')
 
-var cmd = require('./cmd')
-router.use('/c', cmd)
-
 // admin panel
 var visit = require('./admin/visit')
 router.use('/admin/visit', visit)
@@ -27,6 +24,9 @@ router.use(function (req, res, next) {
   logger.visitor(req, app.sessions[req.signedCookies.sid])
   next()
 })
+
+var cmd = require('./cmd')
+router.use('/c', cmd)
 
 // logout page to handle session termination
 router.use('/logout', function (req, res, next) {
