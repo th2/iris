@@ -106,12 +106,13 @@ module.exports.sendGalleryList = function (res, userName, galleryName) {
           '<a href="#" onclick="closeImage()"><i class="mdi mdi-close btn"></i></a>' +
         '</div>' +
         '<a href="#" onclick="closeImage()"><img id="imageview-image" src="" alt="" /></a></div>'
+        //'<img id="imageview-image" src="" alt="" /></a>'
 
       sendPage(res, '<link href="/css/photoviewer.css" media="all" rel="stylesheet" type="text/css" />\n' +
         '<script type="text/javascript">\n' +
         'var galleryName = "' + galleryName + '"\n' +
         'var fileNames = [' + fileNames + ']\n' +
-        '</script><script src="/photoviewer.js"></script>', content, userName)
+        '</script><script src="/hammer.min.js"></script><script src="/photoviewer.js"></script>', content, userName)
     })
   }
 }

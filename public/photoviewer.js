@@ -23,8 +23,9 @@ function slower () {
 
 function faster () {
   playSpeed -= 200
-  if (playSpeed < 100)
+  if (playSpeed < 100) {
     playSpeed = 100
+  }
   clearInterval(player)
   player = setInterval(function (){ show(++currentId) }, playSpeed)
 }
@@ -53,7 +54,21 @@ window.onkeyup = function (e) {
   if (key === 68) downloadOriginal() // d
   else if (key === 37) show(--currentId) // left arrow
   else if (key === 80) play() // p
-  else if (key === 39) show(--currentId) // right arrow
+  else if (key === 39) show(++currentId) // right arrow
   else if (key === 27) closeImage() // escape
   else if (key === 88) closeImage() // x
 }
+
+document.addEventListener('DOMContentLoaded', function () {
+  var touchTarget = document.getElementById('imageview-container')
+
+  Hammer(touchTarget).on('swipeleft', function () {
+    show(++currentId)
+  })
+  Hammer(touchTarget).on('swiperight', function () {
+    show(--currentId)
+  })
+  Hammer(touchTarget).on('tap', function () {
+    closeImage()
+  })
+}, false)
