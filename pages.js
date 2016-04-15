@@ -56,7 +56,7 @@ module.exports.sendSettingsPage = function (res, userName, message1, message2) {
 
 // send list of available galleries
 module.exports.sendMainList = function (res, userName) {
-  var content = '<div class="6"><ul class="listmain">'
+  var content = '<div class="listbox"><ul class="listmain">'
   for (var galleryName in app.galleries[userName]) {
     if (app.galleries[userName][galleryName]) {
       content += '<li><a href="/' + galleryName + '/"><span class="listlink">' +
@@ -67,7 +67,7 @@ module.exports.sendMainList = function (res, userName) {
   }
   content += '</ul></div>'
 
-  sendPage(res, '<link rel="stylesheet" type="text/css" href="/css/mainlist.css" media="all">', content, userName, '')
+  sendPage(res, '', content, userName, '')
 }
 
 module.exports.sendGalleryList = function (res, userName, galleryName) {
@@ -81,7 +81,7 @@ module.exports.sendGalleryList = function (res, userName, galleryName) {
       var content = ''
 
       if (app.users[userName].galleryViewMode === 'list') {
-        content += '<div class="6"><ul class="listmain">'
+        content += '<div class="listbox"><ul class="listmain">'
         for (var i in files) {
           if (files[i].substring(0, 1) !== '.') {
             fileNames += "'" + files[i] + "', "
@@ -93,7 +93,7 @@ module.exports.sendGalleryList = function (res, userName, galleryName) {
         }
         content += '</ul></div>'
       } else { // app.users[userName].galleryViewMode === 'thumb'
-        content += '<div class="listbox"><ul class="listmain">'
+        content += '<ul class="thumblist">'
         for (var i in files) {
           if (files[i].substring(0, 1) === '.') {
 
@@ -105,7 +105,7 @@ module.exports.sendGalleryList = function (res, userName, galleryName) {
             content += '<a class="thumb" href="/original/' + galleryName + '/' + files[i] + '">' + files[i] + '</a>'
           }
         }
-        content += '</ul></div>'
+        content += '</ul>'
       }
 
       content += '<div id="imageview-container"><div id="imageview-nav">' +
@@ -131,9 +131,7 @@ module.exports.sendGalleryList = function (res, userName, galleryName) {
         userFunctions += '<a href="/' + galleryName + '/list/"><i class="mdi mdi-view-list btn"><span class="btntext">List View</span></i></a> '
       }
 
-      sendPage(res, '<link rel="stylesheet" type="text/css" href="/css/mainlist.css" media="all">' +
-        '<link href="/css/photoviewer.css" media="all" rel="stylesheet" type="text/css" />\n' +
-        '<script type="text/javascript">\n' +
+      sendPage(res, '<script type="text/javascript">\n' +
         'var galleryName = "' + galleryName + '"\n' +
         'var fileNames = [' + fileNames + ']\n' +
         '</script><script src="/hammer.min.js"></script><script src="/photoviewer.js"></script>', content, userName,
