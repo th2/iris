@@ -46,6 +46,8 @@ a {
   padding: 20px;
 }
 #top .btn:hover {
+  padding-left: 10px;
+  padding-right: 10px;
   background-color: #1976D2;
 }
 #top .mdi-keyboard-backspace {

@@ -2,13 +2,25 @@
 var crypto = require('crypto')
 var express = require('express')
 var router = express.Router()
+var path = require('path')
 
 var app = require('./app')
 var config = require('./config/private')
 var fs = require('fs')
 var logger = require('./logger')
 var pages = require('./pages')
-var path = require('path')
+var filesystem = require('./filesystem')
+
+router.use('/info', function (req, res, next) {
+  var response = ''
+  for (var galleryId in filesystem.imageInfo) {
+    for (var imageId in filesystem.imageInfo[galleryId]) {
+      response += galleryId + '/' + imageId
+      response += filesystem.imageInfo[galleryId][imageId].gps
+    }
+  }
+  res.send(response)
+})
 
 // admin panel
 var visit = require('./admin/visit')
@@ -166,7 +178,11 @@ function sendFile (req, res, kind) {
 }
 
 router.use('/', function (req, res) {
-  var gallerySelected = decodeURI(req.url).substring(1)
+  var gallerySelected = decodeURI(req.url).split('/')[1]
+  if (decodeURI(req.url).split('/')[2] === 'list' || decodeURI(req.url).split('/')[2] === 'thumb') {
+    app.users[app.sessions[req.signedCookies.sid]].galleryViewMode = decodeURI(req.url).split('/')[2]
+  }
+
   if (gallerySelected.length === 0 || gallerySelected === 'logout') {
     pages.sendMainList(res, app.sessions[req.signedCookies.sid])
   } else {

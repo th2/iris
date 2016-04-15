@@ -5,7 +5,7 @@ var app = require('./app')
 var config = require('./config/private')
 var filesystem = require('./filesystem')
 
-function sendPage (res, head, content, user) {
+function sendPage (res, head, content, user, userFunctions) {
   fs.readFile('template/frame.html', 'utf-8', function (err, data) {
     if (err) {
       res.send('404')
@@ -13,7 +13,7 @@ function sendPage (res, head, content, user) {
       var nav = ''
       if (user) {
         nav += '<div id="top"><a class="btnback" href="/"><i class="mdi mdi-keyboard-backspace btn"><span class="btntext">Back</span></i></a> ' +
-        '<span id="toptitle">Photos</span><span id="topuser">' + user +
+        '<span id="toptitle">Photos</span><span id="topuser">' + userFunctions +
         '<a href="/settings"><i class="mdi mdi-settings btn"><span class="btntext">Settings</span></i></a> ' +
         '<a href="/logout"><i class="mdi mdi-logout btn"><span class="btntext">Sign out</span></i></a></span></div>'
       } else {
@@ -33,7 +33,7 @@ module.exports.sendLoginPage = function (res, message) {
     '<button>Submit</button>' +
     '<div class="subtext"><a href="/resetpassword">Forgot your password?</a></div>' +
     '</form></div>'
-  sendPage(res, '', content, false)
+  sendPage(res, '', content, false, '')
 }
 
 module.exports.sendSettingsPage = function (res, userName, message1, message2) {
@@ -51,7 +51,7 @@ module.exports.sendSettingsPage = function (res, userName, message1, message2) {
     '<input placeholder="New Mail" name="mail" required="" type="text" value="' + app.users[userName].mail + '">' +
     '<button>Submit</button>' +
     '</form></div>'
-  sendPage(res, '', content, userName)
+  sendPage(res, '', content, userName, '')
 }
 
 // send list of available galleries
@@ -59,7 +59,7 @@ module.exports.sendMainList = function (res, userName) {
   var content = '<div class="6"><ul class="listmain">'
   for (var galleryName in app.galleries[userName]) {
     if (app.galleries[userName][galleryName]) {
-      content += '<li><a href="/' + galleryName + '"><span class="listlink">' +
+      content += '<li><a href="/' + galleryName + '/"><span class="listlink">' +
       '<span class="listdate">' + galleryName.substring(0, 10) + '</span>' +
       '<span class="listtitle">' + galleryName.substring(11) + '</span></span></a>' +
       '<a href="/download/' + galleryName + '.zip"><i class="mdi mdi-download listdl btn"></i></a></li>'
@@ -67,7 +67,7 @@ module.exports.sendMainList = function (res, userName) {
   }
   content += '</ul></div>'
 
-  sendPage(res, '<link rel="stylesheet" type="text/css" href="/css/mainlist.css" media="all">', content, userName)
+  sendPage(res, '<link rel="stylesheet" type="text/css" href="/css/mainlist.css" media="all">', content, userName, '')
 }
 
 module.exports.sendGalleryList = function (res, userName, galleryName) {
@@ -76,22 +76,39 @@ module.exports.sendGalleryList = function (res, userName, galleryName) {
   } else {
     fs.readdir(config.originalsPath + path.sep + galleryName.substring(0, 4) + path.sep + galleryName, function (err, files) {
       if (err) throw err
-      var content = '<div class="listbox"><ul class="listmain">'
       var fileNames = ''
       var fileId = 0
+      var content = ''
 
-      for (var i in files) {
-        if (files[i].slice(-4) === '.jpg' || files[i].slice(-4) === '.jpeg') {
-          fileNames += "'" + files[i] + "', "
-          content += '<a class="thumb" href="/small/' + galleryName + '/' + files[i] + '" onclick="return show(\'' + fileId++ + '\')">' +
-                '<img src="/thumb/' + galleryName + '/' + files[i] + '" alt="" /></a>'
-        } else {
-          content += '<a class="thumb" href="/original/' + galleryName + '/' + files[i] + '">' + files[i] + '</a>'
+      if (app.users[userName].galleryViewMode === 'list') {
+        content += '<div class="6"><ul class="listmain">'
+        for (var i in files) {
+          if (files[i].substring(0, 1) !== '.') {
+            fileNames += "'" + files[i] + "', "
+            content += '<li><a href="/small/' + galleryName + '/' + files[i] + '" onclick="return show(\'' + fileId++ + '\')">' +
+            '<span class="listlink">' +
+            '<span class="listtitle">' + files[i] + '</span></span></a>' +
+            '<a href="/original/' + galleryName + '/' + files[i] + '"><i class="mdi mdi-download listdl btn"></i></a></li>'
+          }
         }
+        content += '</ul></div>'
+      } else { // app.users[userName].galleryViewMode === 'thumb'
+        content += '<div class="listbox"><ul class="listmain">'
+        for (var i in files) {
+          if (files[i].substring(0, 1) === '.') {
+
+          } else if (files[i].slice(-4) === '.jpg' || files[i].slice(-4) === '.jpeg') {
+            fileNames += "'" + files[i] + "', "
+            content += '<a class="thumb" href="/small/' + galleryName + '/' + files[i] + '" onclick="return show(\'' + fileId++ + '\')">' +
+                  '<img src="/thumb/' + galleryName + '/' + files[i] + '" alt="" /></a>'
+          } else {
+            content += '<a class="thumb" href="/original/' + galleryName + '/' + files[i] + '">' + files[i] + '</a>'
+          }
+        }
+        content += '</ul></div>'
       }
 
-      content += '</ul></div>' +
-        '<div id="imageview-container"><div id="imageview-nav">' +
+      content += '<div id="imageview-container"><div id="imageview-nav">' +
           '<a href="#" onclick="downloadOriginal()"><i class="mdi mdi-download btn"></i></a>' +
           '<span id="imageview-play">' +
             '<a href="#" onclick="show(--currentId)"><i class="mdi mdi-chevron-left btn"></i></a>' +
@@ -106,13 +123,21 @@ module.exports.sendGalleryList = function (res, userName, galleryName) {
           '<a href="#" onclick="closeImage()"><i class="mdi mdi-close btn"></i></a>' +
         '</div>' +
         '<a href="#" onclick="closeImage()"><img id="imageview-image" src="" alt="" /></a></div>'
-        //'<img id="imageview-image" src="" alt="" /></a>'
 
-      sendPage(res, '<link href="/css/photoviewer.css" media="all" rel="stylesheet" type="text/css" />\n' +
+      var userFunctions = ''
+      if (app.users[userName].galleryViewMode === 'list') {
+        userFunctions += '<a href="/' + galleryName + '/thumb/"><i class="mdi mdi-view-module btn"><span class="btntext">Thumbnail View</span></i></a> '
+      } else { // app.users[userName].galleryViewMode === 'thumb'
+        userFunctions += '<a href="/' + galleryName + '/list/"><i class="mdi mdi-view-list btn"><span class="btntext">List View</span></i></a> '
+      }
+
+      sendPage(res, '<link rel="stylesheet" type="text/css" href="/css/mainlist.css" media="all">' +
+        '<link href="/css/photoviewer.css" media="all" rel="stylesheet" type="text/css" />\n' +
         '<script type="text/javascript">\n' +
         'var galleryName = "' + galleryName + '"\n' +
         'var fileNames = [' + fileNames + ']\n' +
-        '</script><script src="/hammer.min.js"></script><script src="/photoviewer.js"></script>', content, userName)
+        '</script><script src="/hammer.min.js"></script><script src="/photoviewer.js"></script>', content, userName,
+        userFunctions)
     })
   }
 }

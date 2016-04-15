@@ -23,7 +23,6 @@ fs.readdir(config.originalsPath, function (err, files) {
       }
     }
   }
-  
   scanExifAll()
 })
 
