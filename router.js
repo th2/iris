@@ -11,17 +11,6 @@ var logger = require('./logger')
 var pages = require('./pages')
 var filesystem = require('./filesystem')
 
-router.use('/info', function (req, res, next) {
-  var response = ''
-  for (var galleryId in filesystem.imageInfo) {
-    for (var imageId in filesystem.imageInfo[galleryId]) {
-      response += galleryId + '/' + imageId
-      response += filesystem.imageInfo[galleryId][imageId].gps
-    }
-  }
-  res.send(response)
-})
-
 // admin panel
 var visit = require('./admin/visit')
 router.use('/admin/visit', visit)
@@ -187,6 +176,26 @@ function sendFile (req, res, kind) {
     res.send('403 Forbidden 5')
   }
 }
+
+router.use('/gps', function (req, res, next) {
+  if (app.sessions[req.signedCookies.sid] === 'admin') {
+    var response = ''
+    for (var galleryId in filesystem.imageInfo) {
+      for (var imageId in filesystem.imageInfo[galleryId]) {
+        var gps = filesystem.imageInfo[galleryId][imageId].gps
+        response += galleryId + '/' + imageId + ' '
+        if (gps) {
+          response += gps.GPSLatitudeRef + ' ' + gps.GPSLatitude + ' ' + gps.GPSLongitudeRef + ' ' + gps.GPSLongitude + '<br>'
+        } else {
+          response += 'not set<br>'
+        }
+      }
+    }
+    res.send(response)
+  } else {
+    res.send('403 Forbidden')
+  }
+})
 
 router.use('/', function (req, res) {
   var gallerySelected = decodeURI(req.url).split('/')[1]
