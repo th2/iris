@@ -33,7 +33,7 @@ app.use(bodyParser.json())
 app.use('/', router)
 
 function startHttpListener (callback) {
-  app.listen(httpListenerPort, function () {
+  module.exports.server = app.listen(httpListenerPort, function () {
     console.log('http handler listening on port ' + httpListenerPort)
     callback()
   }).on('error', function (err) {

@@ -75,6 +75,17 @@ router.use(function (req, res, next) {
   }
 })
 
+// stop the server
+router.use('/stop', function (req, res) {
+  if (app.sessions[req.signedCookies.sid] === 'admin') {
+    res.send('goodbye')
+    app.server.close()
+    process.exit()
+  } else {
+    res.send('403 Forbidden 1')
+  }
+})
+
 // settings page handler
 router.use(function (req, res, next) {
   var userName = app.sessions[req.signedCookies.sid]
