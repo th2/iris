@@ -182,7 +182,7 @@ router.use('/gps', function (req, res, next) {
     var response = ''
     for (var galleryId in filesystem.imageInfo) {
       for (var imageId in filesystem.imageInfo[galleryId]) {
-        var gps = filesystem.imageInfo[galleryId][imageId].gps
+        var gps = filesystem.imageInfo[galleryId][imageId]
         response += galleryId + '/' + imageId + ' '
         if (gps) {
           response += gps.GPSLatitudeRef + ' ' + gps.GPSLatitude + ' ' + gps.GPSLongitudeRef + ' ' + gps.GPSLongitude + '<br>'

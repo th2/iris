@@ -22,7 +22,7 @@ fs.readdir(config.originalsPath, function (err, files) {
       }
     }
   }
-  scanExif()
+  // scanExif()
 })
 
 function scanExif () {
@@ -34,7 +34,7 @@ function scanExif () {
     for (var fileId in files) {
       if (files[fileId].substring(0, 1) !== '.' &&
          (files[fileId].slice(-4).toLowerCase() === '.jpg' || files[fileId].slice(-5).toLowerCase() === '.jpeg')) {
-        imageInfo[galleryFolders[folderId]][files[fileId]] = readExif(path.join(galleryPath, files[fileId]))
+        imageInfo[galleryFolders[folderId]][files[fileId]] = readExif(path.join(galleryPath, files[fileId])).gps
       }
     }
   }
