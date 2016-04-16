@@ -180,15 +180,15 @@ function sendFile (req, res, kind) {
 router.use('/gps', function (req, res, next) {
   if (app.sessions[req.signedCookies.sid] === 'admin') {
     var response = ''
-    for (var galleryId in filesystem.imageInfo) {
-      for (var imageId in filesystem.imageInfo[galleryId]) {
-        var gps = filesystem.imageInfo[galleryId][imageId]
-        response += galleryId + '/' + imageId + ' '
-        if (gps) {
-          response += gps.GPSLatitudeRef + ' ' + gps.GPSLatitude + ' ' + gps.GPSLongitudeRef + ' ' + gps.GPSLongitude + '<br>'
-        } else {
-          response += 'not set<br>'
-        }
+    for (var imageId in filesystem.imageInfo) {
+      var image = filesystem.imageInfo[imageId]
+      response += image.gallery + '/' + image.name + ' '
+      if (image.exif) {
+        console.log(image.exif)
+        response += image.exif.GPSLatitudeRef + ' ' + image.exif.GPSLatitude + ' ' +
+        image.exif.GPSLongitudeRef + ' ' + image.exif.GPSLongitude + '<br>'
+      } else {
+        response += 'not set<br>'
       }
     }
     res.send(response)
