@@ -119,6 +119,15 @@ router.use('/admin/access', function (req, res) {
   }
 })
 
+router.use('/admin/scan', function (req, res) {
+  if (app.sessions[req.signedCookies.sid] === 'admin') {
+    res.send('ok')
+    filesystem.scanExif()
+  } else {
+    res.send('403 Forbidden')
+  }
+})
+
 router.use('/adminset', function (req, res) {
   if (app.sessions[req.signedCookies.sid] === 'admin') {
     if (!(req.body.user in app.galleries)) {
@@ -184,7 +193,6 @@ router.use('/gps', function (req, res, next) {
       var image = filesystem.imageInfo[imageId]
       response += image.gallery + '/' + image.name + ' '
       if (image.exif) {
-        console.log(image.exif)
         response += image.exif.GPSLatitudeRef + ' ' + image.exif.GPSLatitude + ' ' +
         image.exif.GPSLongitudeRef + ' ' + image.exif.GPSLongitude + '<br>'
       } else {
