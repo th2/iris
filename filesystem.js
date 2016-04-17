@@ -5,9 +5,10 @@ var exif = require('exif-parser')
 var config = require('./config/private')
 
 var galleryFolders = []
-module.exports.galleryFolders = galleryFolders
 var imageInfo = []
-module.exports.imageInfo = imageInfo
+module.exports.scanExif = scanExif
+Object.defineProperty(module.exports, 'galleryFolders', { get: function () { return galleryFolders } })
+Object.defineProperty(module.exports, 'imageInfo', { get: function () { return imageInfo } })
 
 // file system backend
 fs.readdir(config.originalsPath, function (err, files) {
@@ -32,9 +33,13 @@ fs.readdir(config.originalsPath, function (err, files) {
 })
 
 function scanExif () {
+  console.log('exif scan started')
+  var newImageInfo = []
   for (var folderId in galleryFolders) {
     console.log(galleryFolders[folderId])
-    var galleryPath = path.join(config.originalsPath, galleryFolders[folderId].substring(0, 4), galleryFolders[folderId])
+    var galleryPath = path.join(config.originalsPath,
+      galleryFolders[folderId].substring(0, 4),
+      galleryFolders[folderId])
     var files = fs.readdirSync(galleryPath)
 
     for (var fileId in files) {
@@ -48,11 +53,11 @@ function scanExif () {
         } catch (err) {
           newInfo.exif = err
         }
-        imageInfo.push(newInfo)
+        newImageInfo.push(newInfo)
       }
     }
   }
-  fs.writeFile('config/imageInfo.json', JSON.stringify(imageInfo), function (err) { if (err) console.log('error writing imageInfo: ' + err) })
+  imageInfo = newImageInfo
+  fs.writeFile('config/imageInfo.json', JSON.stringify(newImageInfo), function (err) { if (err) console.log('error writing imageInfo: ' + err) })
   console.log('exif scan done')
 }
-module.exports.scanExif = scanExif

@@ -186,7 +186,7 @@ function sendFile (req, res, kind) {
   }
 }
 
-router.use('/gps', function (req, res, next) {
+router.use('/admin/gpslist', function (req, res, next) {
   if (app.sessions[req.signedCookies.sid] === 'admin') {
     var response = ''
     for (var imageId in filesystem.imageInfo) {
@@ -204,6 +204,54 @@ router.use('/gps', function (req, res, next) {
     res.send('403 Forbidden')
   }
 })
+
+router.use('/cluster', function (req, res, next) {
+  if (app.sessions[req.signedCookies.sid] === 'admin') {
+    var clusters = getClusters()
+
+    var response = ''
+    for (var clusterId in clusters) {
+      response += clusterId + ' ' +
+      clusters[clusterId].GPSLatitudeRef + ' ' + clusters[clusterId].GPSLatitude + ' ' +
+      clusters[clusterId].GPSLongitudeRef + ' ' + clusters[clusterId].GPSLongitude + ' ' +
+      clusters[clusterId].images + '<br>\n'
+    }
+    res.send(response)
+  } else {
+    res.send('403 Forbidden')
+  }
+})
+
+function getClusters () {
+  var clusters = []
+  for (var imageId in filesystem.imageInfo) {
+    var image = filesystem.imageInfo[imageId].exif
+    if (image && image.GPSLatitudeRef && image.GPSLatitude &&
+      image.GPSLongitudeRef && image.GPSLongitude) {
+      var found = false
+      for (var clusterId in clusters) {
+        if (image.GPSLatitudeRef === clusters[clusterId].GPSLatitudeRef &&
+            image.GPSLatitude === clusters[clusterId].GPSLatitude &&
+            image.GPSLongitudeRef === clusters[clusterId].GPSLongitudeRef &&
+            image.GPSLongitude === clusters[clusterId].GPSLongitude) {
+          clusters[clusterId].images.push(imageId)
+          found = true
+          break
+        }
+      }
+      if (!found) {
+        var newCluster = {}
+        newCluster.GPSLatitudeRef = image.GPSLatitudeRef
+        newCluster.GPSLatitude = image.GPSLatitude
+        newCluster.GPSLongitudeRef = image.GPSLongitudeRef
+        newCluster.GPSLongitude = image.GPSLongitude
+        newCluster.images = [ imageId ]
+        clusters.push(newCluster)
+      }
+    }
+  }
+  return clusters
+}
 
 router.use('/', function (req, res) {
   var gallerySelected = decodeURI(req.url).split('/')[1]
