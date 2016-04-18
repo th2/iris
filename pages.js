@@ -94,6 +94,11 @@ module.exports.sendGallery = function (res, userName, galleryName) {
         }
         content += '</ul></div>'
       } else if (app.users[userName].galleryViewMode === 'map') {
+        for (var i in files) {
+          if (files[i].substring(0, 1) !== '.') {
+            fileNames += "'" + files[i] + "', "
+          }
+        }
         header += '<script src="http://maps.googleapis.com/maps/api/js"></script><script src="/map.js"></script>' +
         '<style>body, html { height: 100%; width: 100%; }</style>'
         content += '<div id="map" style="width:100%; height:calc(100% - 58px);"></div>'

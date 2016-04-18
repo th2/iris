@@ -45,6 +45,16 @@ function show (fileId) {
   return false
 }
 
+function showByName (imageName) {
+  for (var fileId in fileNames) {
+    if (fileNames[fileId] === imageName) {
+      show(fileId)
+      break
+    }
+  }
+  return false
+}
+
 function closeImage () {
   pause()
   document.body.classList.toggle('noscroll', false)
