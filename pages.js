@@ -70,14 +70,15 @@ module.exports.sendMainList = function (res, userName) {
   sendPage(res, '', content, userName, '')
 }
 
-module.exports.sendGalleryList = function (res, userName, galleryName) {
+module.exports.sendGallery = function (res, userName, galleryName) {
   if (!app.galleries[userName][galleryName]) {
-    res.send('403 Forbidden 6')
+    res.send('403 Forbidden')
   } else {
     fs.readdir(config.originalsPath + path.sep + galleryName.substring(0, 4) + path.sep + galleryName, function (err, files) {
       if (err) throw err
       var fileNames = ''
       var fileId = 0
+      var header = ''
       var content = ''
 
       if (app.users[userName].galleryViewMode === 'list') {
@@ -92,6 +93,10 @@ module.exports.sendGalleryList = function (res, userName, galleryName) {
           }
         }
         content += '</ul></div>'
+      } else if (app.users[userName].galleryViewMode === 'map') {
+        header += '<script src="http://maps.googleapis.com/maps/api/js"></script><script src="/map.js"></script>' +
+        '<style>body, html { height: 100%; width: 100%; }</style>'
+        content += '<div id="map" style="width:100%; height:calc(100% - 58px);"></div>'
       } else { // app.users[userName].galleryViewMode === 'thumb'
         content += '<ul class="thumblist">'
         for (var i in files) {
@@ -126,12 +131,17 @@ module.exports.sendGalleryList = function (res, userName, galleryName) {
 
       var userFunctions = ''
       if (app.users[userName].galleryViewMode === 'list') {
-        userFunctions += '<a href="/' + galleryName + '/thumb/"><i class="mdi mdi-view-module btn"><span class="btntext">Thumbnail View</span></i></a> '
+        userFunctions += '<a href="/' + galleryName + '/map/"><i class="mdi mdi-google-maps btn"><span class="btntext">Map View</span></i></a> '
+        userFunctions += '<a href="/' + galleryName + '/thumb/"><i class="mdi mdi-view-module btn"><span class="btntext">Icon View</span></i></a> '
+      } else if (app.users[userName].galleryViewMode === 'map') {
+        userFunctions += '<a href="/' + galleryName + '/thumb/"><i class="mdi mdi-view-module btn"><span class="btntext">Icon View</span></i></a> '
+        userFunctions += '<a href="/' + galleryName + '/list/"><i class="mdi mdi-view-list btn"><span class="btntext">List View</span></i></a> '
       } else { // app.users[userName].galleryViewMode === 'thumb'
+        userFunctions += '<a href="/' + galleryName + '/map/"><i class="mdi mdi-google-maps btn"><span class="btntext">Map View</span></i></a> '
         userFunctions += '<a href="/' + galleryName + '/list/"><i class="mdi mdi-view-list btn"><span class="btntext">List View</span></i></a> '
       }
 
-      sendPage(res, '<script type="text/javascript">\n' +
+      sendPage(res, header + '<script type="text/javascript">\n' +
         'var galleryName = "' + galleryName + '"\n' +
         'var fileNames = [' + fileNames + ']\n' +
         '</script><script src="/hammer.min.js"></script><script src="/photoviewer.js"></script>', content, userName,

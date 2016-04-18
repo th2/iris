@@ -34,9 +34,10 @@ fs.readdir(config.originalsPath, function (err, files) {
 
 function scanExif () {
   console.log('exif scan started')
-  var newImageInfo = []
+  var newImageInfo = {}
   for (var folderId in galleryFolders) {
     console.log(galleryFolders[folderId])
+    newImageInfo[galleryFolders[folderId]] = { }
     var galleryPath = path.join(config.originalsPath,
       galleryFolders[folderId].substring(0, 4),
       galleryFolders[folderId])
@@ -46,16 +47,22 @@ function scanExif () {
       if (files[fileId].substring(0, 1) !== '.' &&
          (files[fileId].slice(-4).toLowerCase() === '.jpg' || files[fileId].slice(-5).toLowerCase() === '.jpeg')) {
         var newInfo = {}
-        newInfo.gallery = galleryFolders[folderId]
-        newInfo.name = files[fileId]
         try {
-          newInfo.exif = exif.create(fs.readFileSync(path.join(galleryPath, files[fileId]))).parse().tags
+          var exifData = exif.create(fs.readFileSync(path.join(galleryPath, files[fileId]))).parse().tags
+          if (exifData.GPSLatitudeRef) {
+            newInfo.lat = exifData.GPSLatitude
+            newInfo.lon = exifData.GPSLongitude
+            if (exifData.GPSLatitudeRef === 'S') newInfo.lat *= -1
+            if (exifData.GPSLongitudeRef === 'W') newInfo.lon *= -1
+            newImageInfo[galleryFolders[folderId]][files[fileId]] = newInfo
+          }
         } catch (err) {
           newInfo.exif = err
         }
-        newImageInfo.push(newInfo)
       }
     }
+
+    console.log(newImageInfo[galleryFolders[folderId]])
   }
   imageInfo = newImageInfo
   fs.writeFile('config/imageInfo.json', JSON.stringify(newImageInfo), function (err) { if (err) console.log('error writing imageInfo: ' + err) })

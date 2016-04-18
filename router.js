@@ -205,35 +205,16 @@ router.use('/admin/gpslist', function (req, res, next) {
   }
 })
 
-router.use('/cluster', function (req, res, next) {
-  if (app.sessions[req.signedCookies.sid] === 'admin') {
-    var clusters = getClusters()
-
-    var response = ''
-    for (var clusterId in clusters) {
-      response += clusterId + ' ' +
-      clusters[clusterId].GPSLatitudeRef + ' ' + clusters[clusterId].GPSLatitude + ' ' +
-      clusters[clusterId].GPSLongitudeRef + ' ' + clusters[clusterId].GPSLongitude + ' ' +
-      clusters[clusterId].images + '<br>\n'
-    }
-    res.send(response)
-  } else {
-    res.send('403 Forbidden')
-  }
-})
-
-function getClusters () {
+function cluster (imageList) {
   var clusters = []
-  for (var imageId in filesystem.imageInfo) {
-    var image = filesystem.imageInfo[imageId].exif
-    if (image && image.GPSLatitudeRef && image.GPSLatitude &&
-      image.GPSLongitudeRef && image.GPSLongitude) {
+  for (var imageId in imageList) {
+    var image = imageList[imageId]
+    if (image && image.lat && image.lon) {
       var found = false
       for (var clusterId in clusters) {
-        if (image.GPSLatitudeRef === clusters[clusterId].GPSLatitudeRef &&
-            image.GPSLatitude === clusters[clusterId].GPSLatitude &&
-            image.GPSLongitudeRef === clusters[clusterId].GPSLongitudeRef &&
-            image.GPSLongitude === clusters[clusterId].GPSLongitude) {
+        if (image.lat.toFixed(4) === clusters[clusterId].lat.toFixed(4) &&
+            image.lon.toFixed(4) === clusters[clusterId].lon.toFixed(4)) {
+          clusters[clusterId].count++
           clusters[clusterId].images.push(imageId)
           found = true
           break
@@ -241,10 +222,9 @@ function getClusters () {
       }
       if (!found) {
         var newCluster = {}
-        newCluster.GPSLatitudeRef = image.GPSLatitudeRef
-        newCluster.GPSLatitude = image.GPSLatitude
-        newCluster.GPSLongitudeRef = image.GPSLongitudeRef
-        newCluster.GPSLongitude = image.GPSLongitude
+        newCluster.lat = image.lat
+        newCluster.lon = image.lon
+        newCluster.count = 1
         newCluster.images = [ imageId ]
         clusters.push(newCluster)
       }
@@ -254,15 +234,22 @@ function getClusters () {
 }
 
 router.use('/', function (req, res) {
-  var gallerySelected = decodeURI(req.url).split('/')[1]
-  if (decodeURI(req.url).split('/')[2] === 'list' || decodeURI(req.url).split('/')[2] === 'thumb') {
-    app.users[app.sessions[req.signedCookies.sid]].galleryViewMode = decodeURI(req.url).split('/')[2]
-  }
-
-  if (gallerySelected.length === 0 || gallerySelected === 'logout') {
-    pages.sendMainList(res, app.sessions[req.signedCookies.sid])
+  var path = decodeURI(req.url).split('/')
+  var gallerySelected = path[1]
+  if (gallerySelected.length !== 0 && gallerySelected !== 'logout' &&
+      !app.galleries[app.sessions[req.signedCookies.sid]][gallerySelected]) {
+    res.send('403 Forbidden')
   } else {
-    pages.sendGalleryList(res, app.sessions[req.signedCookies.sid], gallerySelected)
+    if (path[2] === 'mapdata') {
+      res.send(cluster(filesystem.imageInfo[gallerySelected]))
+    } else if (path[2] === 'list' || path[2] === 'map' || path[2] === 'thumb') {
+      app.users[app.sessions[req.signedCookies.sid]].galleryViewMode = path[2]
+      pages.sendGallery(res, app.sessions[req.signedCookies.sid], gallerySelected)
+    } else if (gallerySelected.length === 0 || gallerySelected === 'logout') {
+      pages.sendMainList(res, app.sessions[req.signedCookies.sid])
+    } else { // unknown view mode, send selected gallery with previously selected view mode
+      pages.sendGallery(res, app.sessions[req.signedCookies.sid], gallerySelected)
+    }
   }
 })
 
