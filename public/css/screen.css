@@ -8,6 +8,9 @@ html, body{
 a {
   color: #000;
 }
+.noscroll { 
+  overflow: hidden; 
+}
 .btntext {
   display: none;
 }
