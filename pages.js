@@ -70,6 +70,14 @@ module.exports.sendMainList = function (res, userName) {
   sendPage(res, '', content, userName, '')
 }
 
+module.exports.sendMainMap = function (res, userName) {
+  var header = '<script src="http://maps.googleapis.com/maps/api/js"></script><script src="/map.js"></script>' +
+    '<style>body, html { height: 100%; width: 100%; }</style>'
+  var content = '<div id="map" style="width:100%; height:calc(100% - 58px);"></div>'
+
+  sendPage(res, header, content, userName, '')
+}
+
 module.exports.sendGallery = function (res, userName, galleryName) {
   if (!app.galleries[userName][galleryName]) {
     res.send('403 Forbidden')

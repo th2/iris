@@ -10,6 +10,7 @@ function loadJSON (path, callback) {
   req.send()
 }
 
+var dataPath = '/mapdata'
 var map
 var points = []
 
@@ -20,7 +21,8 @@ function initialize () {
     mapTypeId: google.maps.MapTypeId.HYBRID
   })
 
-  loadJSON('/' + galleryName + '/mapdata', function (data) {
+  if (typeof galleryName !== 'undefined') dataPath = '/' + galleryName + dataPath
+  loadJSON(dataPath, function (data) {
     drawPoints(data)
   })
 }
@@ -28,13 +30,14 @@ function initialize () {
 function drawPoints (data) {
   for (var dataId in data) {
     if (data[dataId].count === 1) {
+      var imageName = Object.keys(data[dataId].images)[0]
       var marker = new google.maps.Marker({
         position: { lat: data[dataId].lat, lng: data[dataId].lon },
         map: map,
-        icon: { url: '/thumb/' + galleryName + '/' + data[dataId].images[0],
+        icon: { url: '/thumb/' + data[dataId].images[imageName].gallery + '/' + imageName,
                 scaledSize: new google.maps.Size(50, 50) }
       })
-      attachImage(marker, data[dataId].images[0])
+      attachImage(marker, Object.keys(data[dataId].images)[0])
       points.push(marker)
     } else {
       var marker = new google.maps.Marker({
@@ -50,10 +53,10 @@ function drawPoints (data) {
         }
       })
       var messageContent = '<div class="thumblist">'
-      for (var imageId in data[dataId].images) {
-        var image = data[dataId].images[imageId]
-        messageContent += '<a class="thumb" href="/small/' + galleryName + '/' + image + '" onclick="return showByName(\'' + image + '\')">' +
-                  '<img src="/thumb/' + galleryName + '/' + image + '" alt="" /></a>'
+      for (var image in data[dataId].images) {
+        var gallery = data[dataId].images[image].gallery
+        messageContent += '<a class="thumb" href="/small/' + gallery + '/' + image + '" onclick="return showByName(\'' + image + '\')">' +
+                  '<img src="/thumb/' + gallery + '/' + image + '" alt="" /></a>'
       }
       messageContent += '</div>'
       attachMessage(marker, messageContent)

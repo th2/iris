@@ -11,10 +11,6 @@ var logger = require('./logger')
 var pages = require('./pages')
 var filesystem = require('./filesystem')
 
-// admin panel
-var visit = require('./admin/visit')
-router.use('/admin/visit', visit)
-
 // access logging
 router.use(function (req, res, next) {
   if (req.signedCookies.sid === undefined) {
@@ -64,17 +60,6 @@ router.use(function (req, res, next) {
   }
 })
 
-// stop the server
-router.use('/stop', function (req, res) {
-  if (app.sessions[req.signedCookies.sid] === 'admin') {
-    res.send('goodbye')
-    app.server.close()
-    process.exit()
-  } else {
-    res.send('403 Forbidden 1')
-  }
-})
-
 // settings page handler
 router.use(function (req, res, next) {
   var userName = app.sessions[req.signedCookies.sid]
@@ -111,6 +96,17 @@ router.use('/settings', function (req, res) {
   pages.sendSettingsPage(res, app.sessions[req.signedCookies.sid], '', '')
 })
 
+// stop the server
+router.use('/admin/stop', function (req, res) {
+  if (app.sessions[req.signedCookies.sid] === 'admin') {
+    res.send('goodbye')
+    app.server.close()
+    process.exit()
+  } else {
+    res.send('403 Forbidden 1')
+  }
+})
+
 router.use('/admin/access', function (req, res) {
   if (app.sessions[req.signedCookies.sid] === 'admin') {
     pages.sendAdminAccess(res)
@@ -118,6 +114,10 @@ router.use('/admin/access', function (req, res) {
     res.send('403 Forbidden 1')
   }
 })
+
+// admin panel
+var visit = require('./admin/visit')
+router.use('/admin/visit', visit)
 
 router.use('/admin/scan', function (req, res) {
   if (app.sessions[req.signedCookies.sid] === 'admin') {
@@ -165,6 +165,56 @@ router.use('/thumb', function (req, res) {
   sendFile(req, res, 'thumb')
 })
 
+router.use('/admin/gpslist', function (req, res, next) {
+  if (app.sessions[req.signedCookies.sid] === 'admin') {
+    var response = ''
+    for (var imageId in filesystem.imageInfo) {
+      var image = filesystem.imageInfo[imageId]
+      response += image.gallery + '/' + image.name + ' '
+      if (image.exif) {
+        response += image.exif.GPSLatitudeRef + ' ' + image.exif.GPSLatitude + ' ' +
+        image.exif.GPSLongitudeRef + ' ' + image.exif.GPSLongitude + '<br>'
+      } else {
+        response += 'not set<br>'
+      }
+    }
+    res.send(response)
+  } else {
+    res.send('403 Forbidden')
+  }
+})
+
+router.use('/map', function (req, res) {
+  pages.sendMainMap(res, app.sessions[req.signedCookies.sid])
+})
+
+router.use('/mapdata', function (req, res) {
+  var userName = app.sessions[req.signedCookies.sid]
+  res.send(cluster(filesystem.getAllImageInfo(userName), 0))
+})
+
+router.use('/', function (req, res) {
+  var path = decodeURI(req.url).split('/')
+  var gallerySelected = path[1]
+  if (gallerySelected.length !== 0 &&
+      !app.galleries[app.sessions[req.signedCookies.sid]][gallerySelected]) {
+    res.send('403 Forbidden')
+  } else {
+    if (path[2] === 'mapdata') {
+      res.send(cluster(filesystem.imageInfo[gallerySelected], 3))
+    } else if (path[2] === 'list' || path[2] === 'map' || path[2] === 'thumb') {
+      app.users[app.sessions[req.signedCookies.sid]].galleryViewMode = path[2]
+      pages.sendGallery(res, app.sessions[req.signedCookies.sid], gallerySelected)
+    } else if (gallerySelected.length === 0 || gallerySelected === 'logout') {
+      pages.sendMainList(res, app.sessions[req.signedCookies.sid])
+    } else { // unknown view mode, send selected gallery with previously selected view mode
+      pages.sendGallery(res, app.sessions[req.signedCookies.sid], gallerySelected)
+    }
+  }
+})
+
+module.exports = router
+
 function sendFile (req, res, kind) {
   var filePath = decodeURI(req.url).substring(1).split('/')
   // remove .zip extension
@@ -186,36 +236,17 @@ function sendFile (req, res, kind) {
   }
 }
 
-router.use('/admin/gpslist', function (req, res, next) {
-  if (app.sessions[req.signedCookies.sid] === 'admin') {
-    var response = ''
-    for (var imageId in filesystem.imageInfo) {
-      var image = filesystem.imageInfo[imageId]
-      response += image.gallery + '/' + image.name + ' '
-      if (image.exif) {
-        response += image.exif.GPSLatitudeRef + ' ' + image.exif.GPSLatitude + ' ' +
-        image.exif.GPSLongitudeRef + ' ' + image.exif.GPSLongitude + '<br>'
-      } else {
-        response += 'not set<br>'
-      }
-    }
-    res.send(response)
-  } else {
-    res.send('403 Forbidden')
-  }
-})
-
-function cluster (imageList) {
+function cluster (imageList, detailLevel) {
   var clusters = []
   for (var imageId in imageList) {
     var image = imageList[imageId]
     if (image && image.lat && image.lon) {
       var found = false
       for (var clusterId in clusters) {
-        if (image.lat.toFixed(4) === clusters[clusterId].lat.toFixed(4) &&
-            image.lon.toFixed(4) === clusters[clusterId].lon.toFixed(4)) {
+        if (image.lat.toFixed(detailLevel) === clusters[clusterId].lat.toFixed(detailLevel) &&
+            image.lon.toFixed(detailLevel) === clusters[clusterId].lon.toFixed(detailLevel)) {
           clusters[clusterId].count++
-          clusters[clusterId].images.push(imageId)
+          clusters[clusterId].images[imageId] = imageList[imageId]
           found = true
           break
         }
@@ -225,32 +256,11 @@ function cluster (imageList) {
         newCluster.lat = image.lat
         newCluster.lon = image.lon
         newCluster.count = 1
-        newCluster.images = [ imageId ]
+        newCluster.images = {}
+        newCluster.images[imageId] = imageList[imageId]
         clusters.push(newCluster)
       }
     }
   }
   return clusters
 }
-
-router.use('/', function (req, res) {
-  var path = decodeURI(req.url).split('/')
-  var gallerySelected = path[1]
-  if (gallerySelected.length !== 0 && gallerySelected !== 'logout' &&
-      !app.galleries[app.sessions[req.signedCookies.sid]][gallerySelected]) {
-    res.send('403 Forbidden')
-  } else {
-    if (path[2] === 'mapdata') {
-      res.send(cluster(filesystem.imageInfo[gallerySelected]))
-    } else if (path[2] === 'list' || path[2] === 'map' || path[2] === 'thumb') {
-      app.users[app.sessions[req.signedCookies.sid]].galleryViewMode = path[2]
-      pages.sendGallery(res, app.sessions[req.signedCookies.sid], gallerySelected)
-    } else if (gallerySelected.length === 0 || gallerySelected === 'logout') {
-      pages.sendMainList(res, app.sessions[req.signedCookies.sid])
-    } else { // unknown view mode, send selected gallery with previously selected view mode
-      pages.sendGallery(res, app.sessions[req.signedCookies.sid], gallerySelected)
-    }
-  }
-})
-
-module.exports = router

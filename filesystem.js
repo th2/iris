@@ -2,6 +2,7 @@
 var fs = require('fs')
 var path = require('path')
 var exif = require('exif-parser')
+var app = require('./app')
 var config = require('./config/private')
 
 var galleryFolders = []
@@ -9,6 +10,16 @@ var imageInfo = []
 module.exports.scanExif = scanExif
 Object.defineProperty(module.exports, 'galleryFolders', { get: function () { return galleryFolders } })
 Object.defineProperty(module.exports, 'imageInfo', { get: function () { return imageInfo } })
+
+module.exports.getAllImageInfo = function (userName) {
+  var result = {}
+  for (var gallery in app.galleries[userName]) {
+    for (var image in imageInfo[gallery]) {
+      result[image] = imageInfo[gallery][image]
+    }
+  }
+  return result
+}
 
 // file system backend
 fs.readdir(config.originalsPath, function (err, files) {
@@ -29,6 +40,12 @@ fs.readdir(config.originalsPath, function (err, files) {
   } catch (e) {
     if (e.code === 'MODULE_NOT_FOUND') scanExif()
     else console.log(e.code)
+  }
+
+  for (var gallery in imageInfo) {
+    for (var file in imageInfo[gallery]) {
+      imageInfo[gallery][file].gallery = gallery
+    }
   }
 })
 
@@ -61,8 +78,6 @@ function scanExif () {
         }
       }
     }
-
-    console.log(newImageInfo[galleryFolders[folderId]])
   }
   imageInfo = newImageInfo
   fs.writeFile('config/imageInfo.json', JSON.stringify(newImageInfo), function (err) { if (err) console.log('error writing imageInfo: ' + err) })
