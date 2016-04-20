@@ -5,15 +5,16 @@ var app = require('./app')
 var config = require('./config/private')
 var filesystem = require('./filesystem')
 
-function sendPage (res, head, content, user, userFunctions) {
+function sendPage (res, title, head, content, user, userFunctions) {
   fs.readFile('template/frame.html', 'utf-8', function (err, data) {
     if (err) {
       res.send('404')
     } else {
       var nav = ''
+      if(title === '') title = 'Photos'
       if (user) {
         nav += '<div id="top"><a class="btnback" href="/"><i class="mdi mdi-keyboard-backspace btn"><span class="btntext">Back</span></i></a> ' +
-        '<span id="toptitle">Photos</span><span id="topuser">' + userFunctions +
+        '<span id="toptitle">' + title + '</span><span id="topuser">' + userFunctions +
         '<a href="/settings"><i class="mdi mdi-settings btn"><span class="btntext">Settings</span></i></a> ' +
         '<a href="/logout"><i class="mdi mdi-logout btn"><span class="btntext">Sign out</span></i></a></span></div>'
       } else {
@@ -33,7 +34,7 @@ module.exports.sendLoginPage = function (res, message) {
     '<button>Submit</button>' +
     '<div class="subtext"><a href="/resetpassword">Forgot your password?</a></div>' +
     '</form></div>'
-  sendPage(res, '', content, false, '')
+  sendPage(res, '', '', content, false, '')
 }
 
 module.exports.sendSettingsPage = function (res, userName, message1, message2) {
@@ -51,7 +52,7 @@ module.exports.sendSettingsPage = function (res, userName, message1, message2) {
     '<input placeholder="New Mail" name="mail" required="" type="text" value="' + app.users[userName].mail + '">' +
     '<button>Submit</button>' +
     '</form></div>'
-  sendPage(res, '', content, userName, '')
+  sendPage(res, '', '', content, userName, '')
 }
 
 // send list of available galleries
@@ -67,7 +68,7 @@ module.exports.sendMainList = function (res, userName) {
   }
   content += '</ul></div>'
 
-  sendPage(res, '', content, userName, '')
+  sendPage(res, '', '', content, userName, '')
 }
 
 module.exports.sendMainMap = function (res, userName) {
@@ -75,7 +76,7 @@ module.exports.sendMainMap = function (res, userName) {
     '<style>body, html { height: 100%; width: 100%; }</style>'
   var content = '<div id="map" style="width:100%; height:calc(100% - 58px);"></div>'
 
-  sendPage(res, header, content, userName, '')
+  sendPage(res, '', header, content, userName, '')
 }
 
 module.exports.sendGallery = function (res, userName, galleryName) {
@@ -154,7 +155,7 @@ module.exports.sendGallery = function (res, userName, galleryName) {
         userFunctions += '<a href="/' + galleryName + '/list/"><i class="mdi mdi-view-list btn"><span class="btntext">List View</span></i></a> '
       }
 
-      sendPage(res, header + '<script type="text/javascript">\n' +
+      sendPage(res, galleryName, header + '<script type="text/javascript">\n' +
         'var galleryName = "' + galleryName + '"\n' +
         'var fileNames = [' + fileNames + ']\n' +
         '</script><script src="/hammer.min.js"></script><script src="/photoviewer.js"></script>', content, userName,
