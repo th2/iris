@@ -42,6 +42,7 @@ function show (fileId) {
   document.getElementById('imageview-image').src = '/small/' + galleryName + '/' + fileNames[fileId]
   document.getElementById('imageview-container').style.display = 'block'
   document.body.classList.toggle('noscroll', true)
+  window.location.hash = fileId
   return false
 }
 
@@ -95,4 +96,8 @@ document.addEventListener('DOMContentLoaded', function () {
   Hammer(touchTarget).on('tap', function () {
     closeImage()
   })
+
+  if (window.location.hash.substring(1) !== '') {
+    show(window.location.hash.substring(1))
+  }
 }, false)
