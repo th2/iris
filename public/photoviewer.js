@@ -42,7 +42,7 @@ function show (fileId) {
   document.getElementById('imageview-image').src = '/small/' + galleryName + '/' + fileNames[fileId]
   document.getElementById('imageview-container').style.display = 'block'
   document.body.classList.toggle('noscroll', true)
-  window.location.hash = fileId
+  window.location.hash = '#' + fileId
   return false
 }
 
@@ -97,7 +97,9 @@ document.addEventListener('DOMContentLoaded', function () {
     closeImage()
   })
 
-  if (window.location.hash.substring(1) !== '') {
-    show(window.location.hash.substring(1))
+  var hash = window.location.hash.substring(1)
+  if (hash !== '') {
+    if (hash.match(/^[0-9]+$/) != null) show(hash)
+    else showByName(hash)
   }
 }, false)
