@@ -1,5 +1,4 @@
 'use strict'
-
 // config
 var httpListenerPort = 80
 

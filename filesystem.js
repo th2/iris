@@ -1,4 +1,4 @@
-
+'use strict'
 var fs = require('fs')
 var path = require('path')
 var exif = require('exif-parser')
@@ -82,4 +82,25 @@ function scanExif () {
   imageInfo = newImageInfo
   fs.writeFile('config/imageInfo.json', JSON.stringify(newImageInfo), function (err) { if (err) console.log('error writing imageInfo: ' + err) })
   console.log('exif scan done')
+}
+
+module.exports.sendFile = function (req, res, kind) {
+  var filePath = decodeURI(req.url).substring(1).split('/')
+  // remove .zip extension
+  if (kind === 'zip' && filePath[0].slice(-4) === '.zip') {
+    filePath[0] = filePath[0].substring(0, filePath[0].length - 4)
+  }
+
+  // check if user is authorized to access the file
+  if (app.galleries[app.sessions[req.signedCookies.sid]][filePath[0]]) {
+    if (kind === 'zip') {
+      res.sendFile(filePath[0] + '.zip', { root: path.join(config.cachePath, 'zip', filePath[0].substring(0, 4)) })
+    } else if (kind === 'original') {
+      res.sendFile(filePath[1], { root: path.join(config.originalsPath, filePath[0].substring(0, 4), filePath[0]) })
+    } else { // kind is small or thumb
+      res.sendFile(filePath[1], { root: path.join(config.cachePath, kind, filePath[0].substring(0, 4), filePath[0]) })
+    }
+  } else {
+    res.send('403 Forbidden 5')
+  }
 }

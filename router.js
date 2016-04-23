@@ -2,12 +2,12 @@
 var crypto = require('crypto')
 var express = require('express')
 var router = express.Router()
-var path = require('path')
 
 var app = require('./app')
 var config = require('./config/private')
 var fs = require('fs')
 var logger = require('./logger')
+var map = require('./map')
 var pages = require('./pages')
 var filesystem = require('./filesystem')
 
@@ -96,92 +96,24 @@ router.use('/settings', function (req, res) {
   pages.sendSettingsPage(res, app.sessions[req.signedCookies.sid], '', '')
 })
 
-// stop the server
-router.use('/admin/stop', function (req, res) {
-  if (app.sessions[req.signedCookies.sid] === 'admin') {
-    res.send('goodbye')
-    app.server.close()
-    process.exit()
-  } else {
-    res.send('403 Forbidden 1')
-  }
-})
-
-router.use('/admin/access', function (req, res) {
-  if (app.sessions[req.signedCookies.sid] === 'admin') {
-    pages.sendAdminAccess(res)
-  } else {
-    res.send('403 Forbidden 1')
-  }
-})
-
 // admin panel
-var visit = require('./admin/visit')
-router.use('/admin/visit', visit)
-
-router.use('/admin/scan', function (req, res) {
-  if (app.sessions[req.signedCookies.sid] === 'admin') {
-    res.send('ok')
-    filesystem.scanExif()
-  } else {
-    res.send('403 Forbidden')
-  }
-})
-
-router.use('/adminset', function (req, res) {
-  if (app.sessions[req.signedCookies.sid] === 'admin') {
-    if (!(req.body.user in app.galleries)) {
-      app.galleries[req.body.user] = {}
-    }
-    if (req.body.value === 'true') {
-      app.galleries[req.body.user][req.body.gallery] = true
-    } else {
-      app.galleries[req.body.user][req.body.gallery] = false
-    }
-
-    fs.writeFile('config/galleries.json', JSON.stringify(app.galleries), function (err) {
-      if (err) {
-        console.log('error writing gallery info: ' + err)
-      }
-      console.log('gallery info saved')
-      console.log(JSON.stringify(app.galleries))
-    })
-  }
-})
+var admin = require('./admin')
+router.use('/admin', admin)
 
 router.use('/download', function (req, res) {
-  sendFile(req, res, 'zip')
+  filesystem.sendFile(req, res, 'zip')
 })
 
 router.use('/original', function (req, res) {
-  sendFile(req, res, 'original')
+  filesystem.sendFile(req, res, 'original')
 })
 
 router.use('/small', function (req, res) {
-  sendFile(req, res, 'small')
+  filesystem.sendFile(req, res, 'small')
 })
 
 router.use('/thumb', function (req, res) {
-  sendFile(req, res, 'thumb')
-})
-
-router.use('/admin/gpslist', function (req, res, next) {
-  if (app.sessions[req.signedCookies.sid] === 'admin') {
-    var response = ''
-    for (var imageId in filesystem.imageInfo) {
-      var image = filesystem.imageInfo[imageId]
-      response += image.gallery + '/' + image.name + ' '
-      if (image.exif) {
-        response += image.exif.GPSLatitudeRef + ' ' + image.exif.GPSLatitude + ' ' +
-        image.exif.GPSLongitudeRef + ' ' + image.exif.GPSLongitude + '<br>'
-      } else {
-        response += 'not set<br>'
-      }
-    }
-    res.send(response)
-  } else {
-    res.send('403 Forbidden')
-  }
+  filesystem.sendFile(req, res, 'thumb')
 })
 
 router.use('/map', function (req, res) {
@@ -190,7 +122,7 @@ router.use('/map', function (req, res) {
 
 router.use('/mapdata', function (req, res) {
   var userName = app.sessions[req.signedCookies.sid]
-  res.send(cluster(filesystem.getAllImageInfo(userName), 0))
+  res.send(map.cluster(filesystem.getAllImageInfo(userName), 0))
 })
 
 router.use('/', function (req, res) {
@@ -201,7 +133,7 @@ router.use('/', function (req, res) {
     res.send('403 Forbidden')
   } else {
     if (path[2] === 'mapdata') {
-      res.send(cluster(filesystem.imageInfo[gallerySelected], 3))
+      res.send(map.cluster(filesystem.imageInfo[gallerySelected], 3))
     } else if (path[2] === 'list' || path[2] === 'map' || path[2] === 'thumb') {
       app.users[app.sessions[req.signedCookies.sid]].galleryViewMode = path[2]
       pages.sendGallery(res, app.sessions[req.signedCookies.sid], gallerySelected)
@@ -214,53 +146,3 @@ router.use('/', function (req, res) {
 })
 
 module.exports = router
-
-function sendFile (req, res, kind) {
-  var filePath = decodeURI(req.url).substring(1).split('/')
-  // remove .zip extension
-  if (kind === 'zip' && filePath[0].slice(-4) === '.zip') {
-    filePath[0] = filePath[0].substring(0, filePath[0].length - 4)
-  }
-
-  // check if user is authorized to access the file
-  if (app.galleries[app.sessions[req.signedCookies.sid]][filePath[0]]) {
-    if (kind === 'zip') {
-      res.sendFile(filePath[0] + '.zip', { root: path.join(config.cachePath, 'zip', filePath[0].substring(0, 4)) })
-    } else if (kind === 'original') {
-      res.sendFile(filePath[1], { root: path.join(config.originalsPath, filePath[0].substring(0, 4), filePath[0]) })
-    } else { // kind is small or thumb
-      res.sendFile(filePath[1], { root: path.join(config.cachePath, kind, filePath[0].substring(0, 4), filePath[0]) })
-    }
-  } else {
-    res.send('403 Forbidden 5')
-  }
-}
-
-function cluster (imageList, detailLevel) {
-  var clusters = []
-  for (var imageId in imageList) {
-    var image = imageList[imageId]
-    if (image && image.lat && image.lon) {
-      var found = false
-      for (var clusterId in clusters) {
-        if (image.lat.toFixed(detailLevel) === clusters[clusterId].lat.toFixed(detailLevel) &&
-            image.lon.toFixed(detailLevel) === clusters[clusterId].lon.toFixed(detailLevel)) {
-          clusters[clusterId].count++
-          clusters[clusterId].images[imageId] = imageList[imageId]
-          found = true
-          break
-        }
-      }
-      if (!found) {
-        var newCluster = {}
-        newCluster.lat = image.lat
-        newCluster.lon = image.lon
-        newCluster.count = 1
-        newCluster.images = {}
-        newCluster.images[imageId] = imageList[imageId]
-        clusters.push(newCluster)
-      }
-    }
-  }
-  return clusters
-}

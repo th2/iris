@@ -56,7 +56,7 @@ function toggle (element) {
       element.value = 'true'
     }
   }
-  httpRequest.open('POST', '/adminset', true)
+  httpRequest.open('POST', '/admin/set', true)
   httpRequest.setRequestHeader('Content-type', 'application/x-www-form-urlencoded')
   httpRequest.send('gallery=' + element.name.split('|')[0] + '&user=' + element.name.split('|')[1] + '&value=' + element.value)
 }

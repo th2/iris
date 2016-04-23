@@ -1,3 +1,4 @@
+'use strict'
 var fs = require('fs')
 var path = require('path')
 
@@ -11,7 +12,7 @@ function sendPage (res, title, head, content, user, userFunctions) {
       res.send('404')
     } else {
       var nav = ''
-      if(title === '') title = 'Photos'
+      if (title === '') title = 'Photos'
       if (user) {
         nav += '<div id="top"><a class="btnback" href="/"><i class="mdi mdi-keyboard-backspace btn"><span class="btntext">Back</span></i></a> ' +
         '<span id="toptitle">' + title + '</span><span id="topuser">' + userFunctions +
