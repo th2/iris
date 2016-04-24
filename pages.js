@@ -73,7 +73,7 @@ module.exports.sendMainList = function (res, userName) {
 }
 
 module.exports.sendMainMap = function (res, userName) {
-  var header = '<script src="http://maps.googleapis.com/maps/api/js"></script><script src="/map.js"></script>' +
+  var header = '<script src="http://maps.googleapis.com/maps/api/js?key=' + config.mapsKey + '"></script><script src="/map.js"></script>' +
     '<style>body, html { height: 100%; width: 100%; }</style>'
   var content = '<div id="map" style="width:100%; height:calc(100% - 58px);"></div>'
 
