@@ -33,7 +33,7 @@ module.exports.visitor = function (req, user) {
   visit.user = user
   visit.headers = req.headers
 
-  fs.appendFile('log/visit/' + dateFormat(new Date(), 'yyyy-mm-dd') + '.json', JSON.stringify(visit) + ',', function (err) {
+  fs.appendFile(privateConfig.logPath + 'visit/' + dateFormat(new Date(), 'yyyy-mm-dd') + '.json', JSON.stringify(visit) + ',', function (err) {
     if (err) throw err
   })
 
@@ -60,7 +60,7 @@ module.exports.visitor = function (req, user) {
 module.exports.exception = function (err) {
   var now = new Date()
   console.log(now.toISOString() + ' ' + err)
-  fs.appendFile('log/error/' + dateFormat(now, 'yyyy-mm-dd') + '.json', JSON.stringify(err) + ',', function (err) {
+  fs.appendFile(privateConfig.logPath + 'error/' + dateFormat(now, 'yyyy-mm-dd') + '.json', JSON.stringify(err) + ',', function (err) {
     if (err) throw err
   })
 }

@@ -1,11 +1,12 @@
 'use strict'
 // config
-var httpListenerPort = 80
+var httpListenerPort = 8080
 
 // includes
 var bodyParser = require('body-parser')
 var cookieParser = require('cookie-parser')
 var express = require('express')
+var errorHandler = require('errorhandler')
 
 var router = require('./router')
 var logger = require('./logger')
@@ -20,6 +21,7 @@ module.exports.sessions = sessions
 
 // objects
 var app = express()
+app.use(errorHandler({ dumpExceptions: true, showStack: true }))
 
 // [http handler]
 // use public folder, cookieParser and json bodyParser
@@ -38,11 +40,7 @@ function startHttpListener (callback) {
   }).on('error', function (err) {
     if (err.errno === 'EACCES' || err.errno === 'EADDRINUSE') {
       console.log('counld not start http handler on port ' + httpListenerPort)
-      if (httpListenerPort === 80) {
-        httpListenerPort = 8080
-      } else {
-        httpListenerPort++
-      }
+      httpListenerPort++
       startHttpListener(callback)
     } else {
       logger.exception(err)

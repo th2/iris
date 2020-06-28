@@ -21,7 +21,10 @@
     "body-parser": "^1.15.0",
     "cookie-parser": "^1.4.0",
     "dateformat": "1.0.12",
+    "errorhandler": "^1.5.1",
+    "exif-parser": "^0.1.9",
     "express": "^4.13.4",
-    "exif-parser": "^0.1.9"
+    "heic-convert": "^1.2.2",
+    "image-thumbnail": "^1.0.9"
   }
 }

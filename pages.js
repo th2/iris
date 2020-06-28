@@ -117,10 +117,23 @@ module.exports.sendGallery = function (res, userName, galleryName) {
         for (var i in files) {
           if (files[i].substring(0, 1) === '.') {
 
-          } else if (files[i].slice(-4) === '.jpg' || files[i].slice(-4) === '.jpeg') {
+          } else if (files[i].slice(-4) === '.jpg' || files[i].slice(-5) === '.jpeg') {
             fileNames += "'" + files[i] + "', "
             content += '<a class="thumb" href="/small/' + galleryName + '/' + files[i] + '" onclick="return show(\'' + fileId++ + '\')">' +
                   '<img src="/thumb/' + galleryName + '/' + files[i] + '" alt="" /></a>'
+          } else if (files[i].slice(-5) === '.heic') {
+            let fileName = files[i]
+            let nextFileName = files[parseInt(i) + 1]
+            let isLivephoto = nextFileName === (fileName.slice(0, -5) + '.mov')
+
+            fileNames += "'" + fileName + ".jpeg', "
+            content += '<a class="thumb' + (isLivephoto ? ' livephoto' : '') + '" href="/small/' + galleryName + '/' + fileName + '.jpeg" onclick="return show(\'' + fileId++ + '\')">' +
+                  '<img src="/thumb/' + galleryName + '/' + fileName + '.jpeg" alt="" /></a>'
+          } else if (files[i].slice(-4) === '.mov') {
+            let isLivephoto = (parseInt(i) > 0) && (files[i] === (files[parseInt(i) - 1].slice(0, -5) + '.mov'))
+            if(!isLivephoto) {
+              content += '<a class="thumb" href="/original/' + galleryName + '/' + files[i] + '">' + files[i] + '</a>'
+            }
           } else {
             content += '<a class="thumb" href="/original/' + galleryName + '/' + files[i] + '">' + files[i] + '</a>'
           }

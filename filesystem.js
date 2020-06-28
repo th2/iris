@@ -2,6 +2,8 @@
 var fs = require('fs')
 var path = require('path')
 var exif = require('exif-parser')
+var imageThumbnail = require('image-thumbnail')
+var heicConvert = require('heic-convert')
 var app = require('./app')
 var config = require('./config/private')
 
@@ -98,9 +100,57 @@ module.exports.sendFile = function (req, res, kind) {
     } else if (kind === 'original') {
       res.sendFile(filePath[1], { root: path.join(config.originalsPath, filePath[0].substring(0, 4), filePath[0]) })
     } else { // kind is small or thumb
-      res.sendFile(filePath[1], { root: path.join(config.cachePath, kind, filePath[0].substring(0, 4), filePath[0]) })
+      var fileToSend = path.join(config.cachePath, kind, filePath[0].substring(0, 4), filePath[0], filePath[1])
+
+      if(!fs.existsSync(fileToSend)) {
+        console.log(kind + ' file not found, creating: ' + fileToSend)
+        var fileNameOriginal = filePath[1]
+        if (fileNameOriginal.slice(-10) === '.heic.jpeg') {
+          fileNameOriginal = fileNameOriginal.slice(0, -5)
+        }
+        var fileOriginal = path.join(config.originalsPath, filePath[0].substring(0, 4), filePath[0], fileNameOriginal)
+        if(fileNameOriginal.slice(-5) === '.heic') {
+          let fileConvertedToJpeg = path.join(config.cachePath, 'jpeg', filePath[0].substring(0, 4), filePath[0], fileNameOriginal + '.jpeg')
+          if(!fs.existsSync(fileConvertedToJpeg)) {
+            createJpeg(fileOriginal, fileConvertedToJpeg)
+          }
+          fileOriginal = fileConvertedToJpeg
+        }
+        createFile(kind, fileOriginal, fileToSend)
+      }
+      res.sendFile(fileToSend)
+      
+      
     }
   } else {
     res.send('403 Forbidden 5')
+  }
+}
+
+async function createFile(kind, fileOriginal, fileToSend) {
+  console.log('createFile ' + fileOriginal + '>' + fileToSend)
+  try {
+    let options = { percentage: 10, height: (kind == 'thumb' ? 100 : 500), jpegOptions: { force:true, quality:50 }}
+    const thumbnail = await imageThumbnail(fileOriginal, options)
+    fs.mkdirSync(path.dirname(fileToSend), { recursive: true })
+    fs.writeFileSync(fileToSend, thumbnail)
+  } catch(e) {
+    console.log('error creating file:' + e)
+  }
+}
+
+async function createJpeg(fileOriginal, fileConvertedToJpeg) {
+  console.log('createJpeg ' + fileOriginal + '>' + fileConvertedToJpeg)
+  try {
+    const inputBuffer = fs.readFileSync(fileOriginal)
+    const outputBuffer = await heicConvert({
+      buffer: inputBuffer,
+      format: 'JPEG',
+      quality: 1
+    })
+    fs.mkdirSync(path.dirname(fileConvertedToJpeg), { recursive: true })
+    fs.writeFileSync(fileConvertedToJpeg, outputBuffer)
+  } catch(e) {
+    console.log('error creating jpeg:' + e)
   }
 }
