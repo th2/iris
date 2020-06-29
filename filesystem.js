@@ -96,11 +96,11 @@ module.exports.sendFile = function (req, res, kind) {
   // check if user is authorized to access the file
   if (app.galleries[app.sessions[req.signedCookies.sid]][filePath[0]]) {
     if (kind === 'zip') {
-      res.sendFile(filePath[0] + '.zip', { root: path.join(config.cachePath, 'zip', filePath[0].substring(0, 4)) })
+      res.sendFile(filePath[0] + '.zip', { root: path.join(config.cacheZipPath, filePath[0].substring(0, 4)) })
     } else if (kind === 'original') {
       res.sendFile(filePath[1], { root: path.join(config.originalsPath, filePath[0].substring(0, 4), filePath[0]) })
     } else { // kind is small or thumb
-      var fileToSend = path.join(config.cachePath, kind, filePath[0].substring(0, 4), filePath[0], filePath[1])
+      var fileToSend = path.join((kind === 'thumb' ? config.cacheThumbPath : config.cacheSmallPath), filePath[0].substring(0, 4), filePath[0], filePath[1])
 
       if(!fs.existsSync(fileToSend)) {
         console.log(kind + ' file not found, creating: ' + fileToSend)
@@ -110,7 +110,7 @@ module.exports.sendFile = function (req, res, kind) {
         }
         var fileOriginal = path.join(config.originalsPath, filePath[0].substring(0, 4), filePath[0], fileNameOriginal)
         if(fileNameOriginal.slice(-5) === '.heic') {
-          let fileConvertedToJpeg = path.join(config.cachePath, 'jpeg', filePath[0].substring(0, 4), filePath[0], fileNameOriginal + '.jpeg')
+          let fileConvertedToJpeg = path.join(config.cacheJpegPath, filePath[0].substring(0, 4), filePath[0], fileNameOriginal + '.jpeg')
           if(!fs.existsSync(fileConvertedToJpeg)) {
             createJpeg(fileOriginal, fileConvertedToJpeg)
           }
