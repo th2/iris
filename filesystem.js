@@ -98,47 +98,58 @@ module.exports.sendFile = function (req, res, kind) {
   // check if user is authorized to access the file
   if (app.galleries[app.sessions[req.signedCookies.sid]][filePath[0]]) {
     if (kind === 'zip') {
-      res.sendFile(filePath[0] + '.zip', { root: path.join(config.cacheZipPath, filePath[0].substring(0, 4)) })
+      res.sendFile(path.join(config.cacheZipPath, filePath[0].substring(0, 4)), filePath[0], '.zip')
+      //TODO: autogenerate zip
     } else if (kind === 'original') {
-      res.sendFile(filePath[1], { root: path.join(config.originalsPath, filePath[0].substring(0, 4), filePath[0]) })
-    } else { // kind is small or thumb
-      var fileToSend = path.join((kind === 'thumb' ? config.cacheThumbPath : config.cacheSmallPath), filePath[0].substring(0, 4), filePath[0], filePath[1])
-
-      if(!fs.existsSync(fileToSend)) {
-        console.log(kind + ' file not found, creating: ' + fileToSend)
-        var fileNameOriginal = filePath[1]
-        if (fileNameOriginal.slice(-10) === '.heic.jpeg') {
-          fileNameOriginal = fileNameOriginal.slice(0, -5)
-        }
-        var fileOriginal = path.join(config.originalsPath, filePath[0].substring(0, 4), filePath[0], fileNameOriginal)
-        if(fileNameOriginal.slice(-5) === '.heic') {
-          let fileConvertedToJpeg = path.join(config.cacheJpegPath, filePath[0].substring(0, 4), filePath[0], fileNameOriginal + '.jpeg')
-          if(!fs.existsSync(fileConvertedToJpeg)) {
-            createJpeg(fileOriginal, fileConvertedToJpeg)
-          }
-          fileOriginal = fileConvertedToJpeg
-        }
-        createFile(kind, fileOriginal, fileToSend)
-      }
-      res.sendFile(fileToSend)
-      
-      
+      getOriginalPath(filePath[0], filePath[1])
+        .then(filePath => res.sendFile(filePath))
+    } else if (kind === 'small') {
+      getCachePath(filePath[0], filePath[1], config.cacheSmallPath, 500)
+        .then(filePath => res.sendFile(filePath))
+    } else if (kind === 'thumb') {
+      getCachePath(filePath[0], filePath[1], config.cacheThumbPath, 100)
+        .then(filePath => res.sendFile(filePath))
+    } else {
+      console.log('unknown kind:' + kind)  
+      res.send('403 Forbidden')    
     }
   } else {
-    res.send('403 Forbidden 5')
+    res.send('403 Forbidden')
   }
 }
 
-async function createFile(kind, fileOriginal, fileToSend) {
-  console.log('createFile ' + fileOriginal + '>' + fileToSend)
+async function getOriginalPath(filepath, filename) {
+  var originalPath = path.join(config.originalsPath, filepath.substring(0, 4), filepath, filename)
+  if(fs.existsSync(originalPath)){
+    return originalPath
+  }
+
+  //console.log(originalPath + ' requested: fallback to jpeg cache')
+  var jpegCachePath = path.join(config.cacheJpegPath, filepath.substring(0, 4), filepath, filename)
+  if(!fs.existsSync(jpegCachePath)){
+    await createJpeg(originalPath, jpegCachePath)
+  }
+  return jpegCachePath
+}
+
+async function getCachePath(filePath, fileName, kindPath, kindSize) {
+  var thumbPath = path.join(kindPath, filePath.substring(0, 4), filePath, fileName.slice(0, -5) + '.jpeg')
+  if(fs.existsSync(thumbPath)){
+    return thumbPath
+  }
+
+  var originalPath = await getOriginalPath(filePath, fileName)
+  console.log('createCacheFile ' + originalPath + '>' + thumbPath)
   try {
-    let options = { percentage: 10, height: (kind == 'thumb' ? 100 : 500), jpegOptions: { force:true, quality:50 }}
-    const thumbnail = await imageThumbnail(fileOriginal, options)
-    fs.mkdirSync(path.dirname(fileToSend), { recursive: true })
-    fs.writeFileSync(fileToSend, thumbnail)
+    let options = { percentage: 10, height: kindSize, jpegOptions: { force:true, quality:50 }}
+    const thumbnail = await imageThumbnail(originalPath, options)
+    fs.mkdirSync(path.dirname(thumbPath), { recursive: true })
+    fs.writeFileSync(thumbPath, thumbnail)
   } catch(e) {
     console.log('error creating file:' + e)
   }
+
+  return thumbPath
 }
 
 async function createJpeg(fileOriginal, fileConvertedToJpeg) {
