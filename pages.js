@@ -73,9 +73,8 @@ module.exports.sendMainList = function (res, userName) {
 }
 
 module.exports.sendMainMap = function (res, userName) {
-  var header = '<script src="http://maps.googleapis.com/maps/api/js?key=' + config.mapsKey + '"></script><script src="/map.js"></script>' +
-    '<style>body, html { height: 100%; width: 100%; }</style>'
-  var content = '<div id="map" style="width:100%; height:calc(100% - 58px);"></div>'
+  var header = ''
+  var content = '<div id="map" style="width:100%; height:calc(100% - 58px);">todo</div>'
 
   sendPage(res, '', header, content, userName, '')
 }
@@ -109,9 +108,12 @@ module.exports.sendGallery = function (res, userName, galleryName) {
             fileNames += "'" + files[i] + "', "
           }
         }
-        header += '<script src="http://maps.googleapis.com/maps/api/js"></script><script src="/map.js"></script>' +
-        '<style>body, html { height: 100%; width: 100%; }</style>'
-        content += '<div id="map" style="width:100%; height:calc(100% - 58px);"></div>'
+        header += '<link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css" integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ==" crossorigin=""/>' +
+        '<script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js" integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew==" crossorigin=""></script>'
+        content += '<div id="map" style="width:100%; height:500px;"></div>' +
+        "<script>var mymap = L.map('map').setView([51.505, -0.09], 13);" +
+        "console.log(mymap)" +
+        "</script>"
       } else { // app.users[userName].galleryViewMode === 'thumb'
         content += '<ul class="thumblist">'
         for (var i in files) {
