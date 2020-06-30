@@ -1,11 +1,12 @@
 'use strict'
 var fs = require('fs')
 var path = require('path')
-var exif = require('exif-parser')
+var ExifReader = require('exifreader')
 var imageThumbnail = require('image-thumbnail')
 var heicConvert = require('heic-convert')
 var app = require('./app')
 var config = require('./config/private')
+const { exit } = require('process')
 
 var galleryFolders = []
 var imageInfo = []
@@ -64,15 +65,16 @@ function scanExif () {
 
     for (var fileId in files) {
       if (files[fileId].substring(0, 1) !== '.' &&
-         (files[fileId].slice(-4).toLowerCase() === '.jpg' || files[fileId].slice(-5).toLowerCase() === '.jpeg')) {
+         (files[fileId].slice(-4).toLowerCase() === '.jpg'
+         || files[fileId].slice(-5).toLowerCase() === '.jpeg'
+         || files[fileId].slice(-5).toLowerCase() === '.heic')) {
         var newInfo = {}
         try {
-          var exifData = exif.create(fs.readFileSync(path.join(galleryPath, files[fileId]))).parse().tags
-          if (exifData.GPSLatitudeRef) {
-            newInfo.lat = exifData.GPSLatitude
-            newInfo.lon = exifData.GPSLongitude
-            if (exifData.GPSLatitudeRef === 'S') newInfo.lat *= -1
-            if (exifData.GPSLongitudeRef === 'W') newInfo.lon *= -1
+          var exifData = ExifReader.load(fs.readFileSync(path.join(galleryPath, files[fileId])), {expanded: true})
+          if (exifData.gps) {
+            newInfo.lat = exifData.gps.Latitude
+            newInfo.lon = exifData.gps.Longitude
+            newInfo.alt = exifData.gps.Altitude
             newImageInfo[galleryFolders[folderId]][files[fileId]] = newInfo
           }
         } catch (err) {

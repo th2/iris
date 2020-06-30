@@ -126,7 +126,7 @@ module.exports.sendGallery = function (res, userName, galleryName) {
             let nextFileName = files[parseInt(i) + 1]
             let isLivephoto = nextFileName === (fileName.slice(0, -5) + '.mov')
 
-            fileNames += "'" + fileName + ".jpeg', "
+            fileNames += "'" + fileName + "', "
             content += '<a class="thumb' + (isLivephoto ? ' livephoto' : '') + '" href="/small/' + galleryName + '/' + fileName + '.jpeg" onclick="return show(\'' + fileId++ + '\')">' +
                   '<img src="/thumb/' + galleryName + '/' + fileName + '.jpeg" alt="" /></a>'
           } else if (files[i].slice(-4) === '.mov') {
