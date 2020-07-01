@@ -64,7 +64,8 @@ module.exports.sendMainList = function (res, userName) {
       content += '<li><a href="/' + galleryName + '/"><span class="listlink">' +
       '<span class="listdate">' + galleryName.substring(0, 10) + '</span>' +
       '<span class="listtitle">' + galleryName.substring(11) + '</span></span></a>' +
-      '<a href="/download/' + galleryName + '.zip"><i class="mdi mdi-download listdl btn"></i></a></li>'
+      '<a href="/download/original/' + galleryName + '.zip"><i class="mdi mdi-download listdl btn"><span class="btntext">Download Originals</span></i></a>' +
+      '<a href="/download/jpeg/' + galleryName + '.zip"><i class="mdi mdi-image-area-close listdl btn"><span class="btntext">Download JPEGs</span></i></a></li>'
     }
   }
   content += '</ul></div>'
@@ -129,8 +130,8 @@ module.exports.sendGallery = function (res, userName, galleryName) {
             let isLivephoto = nextFileName === (fileName.slice(0, -5) + '.mov')
 
             fileNames += "'" + fileName + "', "
-            content += '<a class="thumb' + (isLivephoto ? ' livephoto' : '') + '" href="/small/' + galleryName + '/' + fileName.slice(0, -5) + '.jpeg" onclick="return show(\'' + fileId++ + '\')">' +
-                  '<img src="/thumb/' + galleryName + '/' + fileName.slice(0, -5) + '.jpeg" alt="" /></a>'
+            content += '<a class="thumb' + (isLivephoto ? ' livephoto' : '') + '" href="/small/' + galleryName + '/' + fileName + '" onclick="return show(\'' + fileId++ + '\')">' +
+                  '<img src="/thumb/' + galleryName + '/' + fileName + '" alt="" /></a>'
           } else if (files[i].slice(-4) === '.mov') {
             let isLivephoto = (parseInt(i) > 0) && (files[i] === (files[parseInt(i) - 1].slice(0, -5) + '.mov'))
             if(!isLivephoto) {

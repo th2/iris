@@ -1,12 +1,14 @@
 'use strict'
 var fs = require('fs')
 var path = require('path')
+var archiver = require('archiver')
 var ExifReader = require('exifreader')
 var imageThumbnail = require('image-thumbnail')
 var heicConvert = require('heic-convert')
 var app = require('./app')
 var config = require('./config/private')
-const { exit } = require('process')
+const { resolve } = require('path')
+const { rejects } = require('assert')
 
 var galleryFolders = []
 var imageInfo = []
@@ -98,8 +100,8 @@ module.exports.sendFile = function (req, res, kind) {
   // check if user is authorized to access the file
   if (app.galleries[app.sessions[req.signedCookies.sid]][filePath[0]]) {
     if (kind === 'zip') {
-      res.sendFile(path.join(config.cacheZipPath, filePath[0].substring(0, 4)), filePath[0], '.zip')
-      //TODO: autogenerate zip
+      getZipPath(filePath[0], req.params.type)
+        .then(filePath => res.sendFile(filePath))
     } else if (kind === 'original') {
       getOriginalPath(filePath[0], filePath[1])
         .then(filePath => res.sendFile(filePath))
@@ -117,19 +119,49 @@ module.exports.sendFile = function (req, res, kind) {
     res.send('403 Forbidden')
   }
 }
+async function getZipPath(filePath, type) {
+  var cachePath = type === 'jpeg' ? config.cacheJpegPath : config.cacheZipPath
+  var zipPath = path.join(cachePath, filePath.substring(0, 4), filePath + '.zip')
+  if(fs.existsSync(zipPath)){
+    return zipPath
+  }
 
-async function getOriginalPath(filepath, filename) {
-  var originalPath = path.join(config.originalsPath, filepath.substring(0, 4), filepath, filename)
+  var originalBasePath = type === 'jpeg' ? config.cacheJpegPath : config.originalsPath
+  var originalPath = path.join(originalBasePath, filePath.substring(0, 4), filePath)
+  await createZip(originalPath, zipPath)
+  return zipPath
+}
+
+async function getOriginalPath(filePath, fileName) {
+  var originalPath = path.join(config.originalsPath, filePath.substring(0, 4), filePath, fileName)
   if(fs.existsSync(originalPath)){
     return originalPath
   }
 
   //console.log(originalPath + ' requested: fallback to jpeg cache')
-  var jpegCachePath = path.join(config.cacheJpegPath, filepath.substring(0, 4), filepath, filename)
+  var jpegCachePath = path.join(config.cacheJpegPath, filePath.substring(0, 4), filePath, fileName)
   if(!fs.existsSync(jpegCachePath)){
-    await createJpeg(originalPath, jpegCachePath)
+    console.log('missing original: ' + originalPath)
   }
   return jpegCachePath
+}
+
+async function getJpegPath(filePath, fileName) {
+  var originalPath = path.join(config.originalsPath, filePath.substring(0, 4), filePath, fileName)
+
+  if(fileName.slice(-5) === '.heic') {
+    var jpegCachePath = path.join(config.cacheJpegPath, filePath.substring(0, 4), filePath, fileName.slice(0, -5) + '.jpeg')
+    if(!fs.existsSync(jpegCachePath)){
+      await createJpeg(originalPath, jpegCachePath)
+    }
+    return jpegCachePath
+  }
+
+  if(fs.existsSync(originalPath)){
+    return originalPath
+  }
+
+  console.log('missing jpeg: ' + originalPath)
 }
 
 async function getCachePath(filePath, fileName, kindPath, kindSize) {
@@ -138,7 +170,7 @@ async function getCachePath(filePath, fileName, kindPath, kindSize) {
     return thumbPath
   }
 
-  var originalPath = await getOriginalPath(filePath, fileName)
+  var originalPath = await getJpegPath(filePath, fileName)
   console.log('createCacheFile ' + originalPath + '>' + thumbPath)
   try {
     let options = { percentage: 10, height: kindSize, jpegOptions: { force:true, quality:50 }}
@@ -150,6 +182,24 @@ async function getCachePath(filePath, fileName, kindPath, kindSize) {
   }
 
   return thumbPath
+}
+
+async function createZip(originalPath, zipPath) {
+  console.log('createZip ' + originalPath + '>' + zipPath)
+  return new Promise((resolve, reject) => {
+    fs.mkdirSync(path.dirname(zipPath.slice(0, zipPath.lastIndexOf('/'))), { recursive: true })
+    var output = fs.createWriteStream(zipPath)
+    var archive = archiver('zip', { zlib: { level: 9 }})
+    archive.pipe(output)
+    archive.directory(originalPath, false)
+    archive.finalize()
+
+    output.on('close', () => {
+      console.log('createZip ' + zipPath + ' done: ' + archive.pointer() + ' total bytes')
+      resolve(archive)
+    });
+		archive.on('error', (err) => reject(err));
+  })
 }
 
 async function createJpeg(fileOriginal, fileConvertedToJpeg) {

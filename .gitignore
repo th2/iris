@@ -3,3 +3,4 @@ log
 config
 files
 .DS_Store
+.vscode

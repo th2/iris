@@ -100,7 +100,7 @@ router.use('/settings', function (req, res) {
 var admin = require('./admin')
 router.use('/admin', admin)
 
-router.use('/download', function (req, res) {
+router.use('/download/:type', function (req, res) {
   filesystem.sendFile(req, res, 'zip')
 })
 
