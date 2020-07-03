@@ -121,13 +121,18 @@ module.exports.sendFile = function (req, res, kind) {
 }
 async function getZipPath(filePath, type) {
   var cachePath = type === 'jpeg' ? config.cacheJpegPath : config.cacheZipPath
+  var originalBasePath = type === 'jpeg' ? config.cacheJpegPath : config.originalsPath
+  var originalPath = path.join(originalBasePath, filePath.substring(0, 4), filePath)
+  if(type === 'jpeg' && !fs.existsSync(originalPath)) {
+    var cachePath = config.cacheZipPath
+    var originalPath = path.join(config.originalsPath, filePath.substring(0, 4), filePath)
+  }
+
   var zipPath = path.join(cachePath, filePath.substring(0, 4), filePath + '.zip')
   if(fs.existsSync(zipPath)){
     return zipPath
   }
 
-  var originalBasePath = type === 'jpeg' ? config.cacheJpegPath : config.originalsPath
-  var originalPath = path.join(originalBasePath, filePath.substring(0, 4), filePath)
   await createZip(originalPath, zipPath)
   return zipPath
 }

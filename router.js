@@ -22,9 +22,6 @@ router.use(function (req, res, next) {
   next()
 })
 
-var cmd = require('./cmd')
-router.use('/c', cmd)
-
 // logout page to handle session termination
 router.use('/logout', function (req, res, next) {
   if (req.body.name) {
