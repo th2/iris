@@ -29,11 +29,11 @@ function sendPage (res, title, head, content, user, userFunctions) {
 
 module.exports.sendLoginPage = function (res, message) {
   var content = '<div class="center"><form method="post">' +
-    '<h1>login</h1>' + message +
     '<input placeholder="Name" name="name" required="" type="text">' +
     '<input placeholder="Password" name="password" required="" type="password">' +
+    message +
     '<button>Submit</button>' +
-    '<div class="subtext"><a href="/resetpassword">Forgot your password?</a></div>' +
+    '<div class="subtext"><a href="/resetpassword">reset password</a></div>' +
     '</form></div>'
   sendPage(res, '', '', content, false, '')
 }
