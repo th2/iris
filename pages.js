@@ -61,11 +61,13 @@ module.exports.sendMainList = function (res, userName) {
   var content = '<div class="listbox"><ul class="listmain">'
   for (var galleryName in app.galleries[userName]) {
     if (app.galleries[userName][galleryName]) {
-      content += '<li><a href="/' + galleryName + '/"><span class="listlink">' +
+      content += '<li>' +
+      '<a href="/download/original/' + galleryName + '.zip"><i class="mdi mdi-download listdl btn"><span class="btntext">Download Originals</span></i></a>' +
+      '<a href="/download/jpeg/' + galleryName + '.zip"><i class="mdi mdi-image-area-close listdl btn"><span class="btntext">Download JPEGs</span></i></a>' +
+      '<a href="/' + galleryName + '/"><span class="listlink">' +
       '<span class="listdate">' + galleryName.substring(0, 10) + '</span>' +
       '<span class="listtitle">' + galleryName.substring(11) + '</span></span></a>' +
-      '<a href="/download/original/' + galleryName + '.zip"><i class="mdi mdi-download listdl btn"><span class="btntext">Download Originals</span></i></a>' +
-      '<a href="/download/jpeg/' + galleryName + '.zip"><i class="mdi mdi-image-area-close listdl btn"><span class="btntext">Download JPEGs</span></i></a></li>'
+      '</li>'
     }
   }
   content += '</ul></div>'
