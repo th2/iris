@@ -5,6 +5,7 @@ var archiver = require('archiver')
 var ExifReader = require('exifreader')
 var imageThumbnail = require('image-thumbnail')
 var heicConvert = require('heic-convert')
+var ffmpeg = require('fluent-ffmpeg')
 var app = require('./app')
 var config = require('./config/private')
 const { resolve } = require('path')
@@ -170,7 +171,7 @@ async function getJpegPath(filePath, fileName) {
 }
 
 async function getCachePath(filePath, fileName, kindPath, kindSize) {
-  var thumbPath = path.join(kindPath, filePath.substring(0, 4), filePath, fileName.slice(0, -5) + '.jpeg')
+  var thumbPath = path.join(kindPath, filePath.substring(0, 4), filePath, fileName.slice(0, fileName.lastIndexOf('.')) + '.jpeg')
   if(fs.existsSync(thumbPath)){
     return thumbPath
   }
@@ -178,10 +179,21 @@ async function getCachePath(filePath, fileName, kindPath, kindSize) {
   var originalPath = await getJpegPath(filePath, fileName)
   console.log('createCacheFile ' + originalPath + '>' + thumbPath)
   try {
-    let options = { percentage: 10, height: kindSize, jpegOptions: { force:true, quality:50 }}
-    const thumbnail = await imageThumbnail(originalPath, options)
     fs.mkdirSync(path.dirname(thumbPath), { recursive: true })
-    fs.writeFileSync(thumbPath, thumbnail)
+    if(originalPath.substr(-4) == '.mov') {
+      new ffmpeg(originalPath)
+        .screenshot({
+            count: 1,
+            filename: thumbPath.substring(thumbPath.lastIndexOf('/') + 1),
+            size: '?x100'
+          }, thumbPath.substring(0, thumbPath.lastIndexOf('/')), function(err) {
+          console.log('screenshots were saved')
+        })
+    } else {
+      let options = { percentage: 10, height: kindSize, jpegOptions: { force:true, quality:50 }}
+      const thumbnail = await imageThumbnail(originalPath, options)
+      fs.writeFileSync(thumbPath, thumbnail)
+    }
   } catch(e) {
     console.log('error creating file:' + e)
   }

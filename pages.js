@@ -137,7 +137,9 @@ module.exports.sendGallery = function (res, userName, galleryName) {
           } else if (files[i].slice(-4) === '.mov') {
             let isLivephoto = (parseInt(i) > 0) && (files[i] === (files[parseInt(i) - 1].slice(0, -5) + '.mov'))
             if(!isLivephoto) {
-              content += '<a class="thumb" href="/original/' + galleryName + '/' + files[i] + '">' + files[i] + '</a>'
+              content += '<a class="thumb" href="/original/' + galleryName + '/' + files[i] + '">' +
+              '<i class="mdi mdi-play-circle-outline mdi-light overlaycenter"></i>' +
+              '<img src="/thumb/' + galleryName + '/' + files[i] + '" alt="" /></a>'
             }
           } else {
             content += '<a class="thumb" href="/original/' + galleryName + '/' + files[i] + '">' + files[i] + '</a>'
