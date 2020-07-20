@@ -246,6 +246,7 @@ ul{
   width: 100%;
   height: 100%;
   margin: 0px;
+  z-index: 3;
 }
 #imageview-nav {
   height: 40px;
