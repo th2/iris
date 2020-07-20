@@ -65,8 +65,8 @@ module.exports.sendMainList = function (res, userName) {
       '<a href="/download/original/' + galleryName + '.zip"><i class="mdi mdi-download listdl btn"><span class="btntext">Download Originals</span></i></a>' +
       '<a href="/download/jpeg/' + galleryName + '.zip"><i class="mdi mdi-image-area-close listdl btn"><span class="btntext">Download JPEGs</span></i></a>' +
       '<a href="/' + galleryName + '/"><span class="listlink">' +
-      '<span class="listdate">' + galleryName.substring(0, 10) + '</span>' +
-      '<span class="listtitle">' + galleryName.substring(11) + '</span></span></a>' +
+      '<span class="listdate">' + galleryName.substring(0, galleryName.indexOf(' ')) + '</span>' +
+      '<span class="listtitle">' + galleryName.substring(galleryName.indexOf(' ') + 1) + '</span></span></a>' +
       '</li>'
     }
   }
