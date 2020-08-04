@@ -39,12 +39,13 @@ router.use(function (req, res, next) {
   if (req.signedCookies.sid in app.sessions) {
     // user is logged in
     next()
-  } else if (req.body.name) {
+  } else if ((req.body.name && req.body.password) || (req.query.name && req.query.password)) {
+    var reqName = req.body.name ? req.body.name.toLowerCase() : req.query.name.toLowerCase()
+    var reqPass = req.body.password ? req.body.password : req.query.password
     // user sent credentials
-    var passHMAC = crypto.createHmac('sha512', config.passHMAC).update(req.body.password).digest('base64')
-    // console.log(req.body.name + ': ' + passHMAC)
-    if (app.users[req.body.name.toLowerCase()] && app.users[req.body.name.toLowerCase()].pass === passHMAC) {
-      app.sessions[req.signedCookies.sid] = req.body.name.toLowerCase()
+    var passHMAC = crypto.createHmac('sha512', config.passHMAC).update(reqPass).digest('base64')
+    if (app.users[reqName] && app.users[reqName].pass === passHMAC) {
+      app.sessions[req.signedCookies.sid] = reqName
       // corrent credentials
       next()
     } else {
