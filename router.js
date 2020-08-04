@@ -123,24 +123,21 @@ router.use('/mapdata', function (req, res) {
   res.send(map.cluster(filesystem.getAllImageInfo(userName), 0))
 })
 
+router.use('/:galleryName/mapdata', function (req, res) {
+  res.send(map.cluster(filesystem.imageInfo[req.params.galleryName], 3))
+})
+
+router.use('/:galleryName/:viewMode', function (req, res) {
+  app.users[app.sessions[req.signedCookies.sid]].galleryViewMode = req.params.viewMode
+  pages.sendGallery(res, app.sessions[req.signedCookies.sid], req.params.galleryName)
+})
+
+router.use('/:galleryName', function (req, res) {
+  pages.sendGallery(res, app.sessions[req.signedCookies.sid], req.params.galleryName)
+})
+
 router.use('/', function (req, res) {
-  var path = decodeURI(req.url).split('/')
-  var gallerySelected = path[1]
-  if (gallerySelected.length !== 0 &&
-      !app.galleries[app.sessions[req.signedCookies.sid]][gallerySelected]) {
-    res.send('403 Forbidden')
-  } else {
-    if (path[2] === 'mapdata') {
-      res.send(map.cluster(filesystem.imageInfo[gallerySelected], 3))
-    } else if (path[2] === 'list' || path[2] === 'map' || path[2] === 'thumb') {
-      app.users[app.sessions[req.signedCookies.sid]].galleryViewMode = path[2]
-      pages.sendGallery(res, app.sessions[req.signedCookies.sid], gallerySelected)
-    } else if (gallerySelected.length === 0 || gallerySelected === 'logout') {
-      pages.sendMainList(res, app.sessions[req.signedCookies.sid])
-    } else { // unknown view mode, send selected gallery with previously selected view mode
-      pages.sendGallery(res, app.sessions[req.signedCookies.sid], gallerySelected)
-    }
-  }
+  pages.sendMainList(res, app.sessions[req.signedCookies.sid])
 })
 
 module.exports = router
