@@ -188,14 +188,17 @@ module.exports.sendGallery = function (res, userName, galleryName) {
 module.exports.sendAdminAccess = function (res) {
   var page = fs.readFileSync('template/photoadmin.html')
   page += '<section class="access-section"><div class="access-container"><table>'
-  for (var folderID in filesystem.galleryFolders) {
-    page += '<tr><td><a href="/' + filesystem.galleryFolders[folderID] + '">' + filesystem.galleryFolders[folderID] + '</a></td>'
+
+  var galleries = filesystem.galleryFolders
+  galleries.sort()
+  for (var folderID in galleries) {
+    page += '<tr><td><a href="/' + galleries[folderID] + '">' + galleries[folderID] + '</a></td>'
 
     for (var userId in app.users) {
-      page += '<td><input type="button" name="' + filesystem.galleryFolders[folderID] + '|' + userId + '" value="'
+      page += '<td><input type="button" name="' + galleries[folderID] + '|' + userId + '" value="'
       if (app.galleries[userId] !== undefined &&
-          (filesystem.galleryFolders[folderID] in app.galleries[userId]) &&
-          app.galleries[userId][filesystem.galleryFolders[folderID]]) {
+          (galleries[folderID] in app.galleries[userId]) &&
+          app.galleries[userId][galleries[folderID]]) {
         page += userId + ' ✅'
       } else {
         page += userId
