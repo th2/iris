@@ -190,7 +190,7 @@ module.exports.sendAdminAccess = function (res) {
   page += '<section class="access-section"><div class="access-container"><table>'
 
   var galleries = filesystem.galleryFolders
-  galleries.sort()
+  galleries.sort().reverse()
   for (var folderID in galleries) {
     page += '<tr><td><a href="/' + galleries[folderID] + '">' + galleries[folderID] + '</a></td>'
 
