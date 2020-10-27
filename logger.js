@@ -41,7 +41,7 @@ module.exports.visitor = function (req, user) {
   if (visit.user) {
     message += visit.user + ' '
   } else {
-    message += util.inspect(visit.cookie) + ' '
+    message +=  'nouser '
   }
   message += visit.url + ' '
   if (visit.method !== 'GET') {
@@ -50,9 +50,10 @@ module.exports.visitor = function (req, user) {
   if (Object.keys(visit.body).length !== 0) {
     message += ' ' + util.inspect(visit.body)
   }
-  // message += ' ' + util.inspect(visit.headers)
 
-  if (visit.url.substring(0, 7) !== '/thumb/' && visit.url.substring(0, 7) !== '/small/') {
+  if (!visit.user && visit.url == '/' && visit.method == 'GET') {
+    message += ' notsend'
+  } else if (visit.url.substring(0, 7) !== '/thumb/' && visit.url.substring(0, 7) !== '/small/') {
     telegram.sendMessage(privateConfig.telegramTargetId, message)
   }
 }
