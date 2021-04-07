@@ -18,15 +18,15 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
-    "archiver": "^4.0.1",
+    "archiver": "^5.3.0",
     "body-parser": "^1.15.0",
     "cookie-parser": "^1.4.0",
-    "dateformat": "1.0.12",
+    "dateformat": "^4.5.1",
     "errorhandler": "^1.5.1",
-    "exifreader": "^3.12.0",
+    "exifreader": "^3.14.1",
     "express": "^4.13.4",
     "fluent-ffmpeg": "^2.1.2",
-    "heic-convert": "^1.2.2",
-    "image-thumbnail": "^1.0.9"
+    "heic-convert": "^1.2.4",
+    "image-thumbnail": "^1.0.13"
   }
 }
