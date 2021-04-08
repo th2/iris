@@ -94,7 +94,7 @@ function scanExif () {
 module.exports.sendFile = function (req, res, kind) {
   var filePath = decodeURI(req.url).substring(1).split('/')
   // remove .zip extension
-  if (kind === 'zip' && filePath[0].slice(-4) === '.zip') {
+  if (kind === 'zip' && filePath[0].slice(-4).toLowerCase() === '.zip') {
     filePath[0] = filePath[0].substring(0, filePath[0].length - 4)
   }
 
@@ -155,7 +155,7 @@ async function getOriginalPath(filePath, fileName) {
 async function getJpegPath(filePath, fileName) {
   var originalPath = path.join(config.originalsPath, filePath.substring(0, 4), filePath, fileName)
 
-  if(fileName.slice(-5) === '.heic') {
+  if(fileName.slice(-5).toLowerCase() === '.heic') {
     var jpegCachePath = path.join(config.cacheJpegPath, filePath.substring(0, 4), filePath, fileName.slice(0, -5) + '.jpeg')
     if(!fs.existsSync(jpegCachePath)){
       await createJpeg(originalPath, jpegCachePath)
@@ -180,7 +180,7 @@ async function getCachePath(filePath, fileName, kindPath, kindSize) {
   console.log('createCacheFile ' + originalPath + '>' + thumbPath)
   try {
     fs.mkdirSync(path.dirname(thumbPath), { recursive: true })
-    if(originalPath.substr(-4) == '.mov') {
+    if(originalPath.substr(-4).toLowerCase() == '.mov') {
       new ffmpeg(originalPath)
         .screenshot({
             count: 1,

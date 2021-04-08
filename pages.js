@@ -122,11 +122,11 @@ module.exports.sendGallery = function (res, userName, galleryName) {
         for (var i in files) {
           if (files[i].substring(0, 1) === '.') {
 
-          } else if (files[i].slice(-4) === '.jpg' || files[i].slice(-5) === '.jpeg') {
+          } else if (files[i].slice(-4).toLowerCase() === '.jpg' || files[i].slice(-5) === '.jpeg') {
             fileNames += "'" + files[i] + "', "
             content += '<a class="thumb" href="/small/' + galleryName + '/' + files[i] + '" onclick="return show(\'' + fileId++ + '\')">' +
                   '<img src="/thumb/' + galleryName + '/' + files[i] + '" alt="" /></a>'
-          } else if (files[i].slice(-5) === '.heic') {
+          } else if (files[i].slice(-5).toLowerCase() === '.heic') {
             let fileName = files[i]
             let nextFileName = files[parseInt(i) + 1]
             let isLivephoto = nextFileName === (fileName.slice(0, -5) + '.mov')
@@ -134,7 +134,7 @@ module.exports.sendGallery = function (res, userName, galleryName) {
             fileNames += "'" + fileName + "', "
             content += '<a class="thumb' + (isLivephoto ? ' livephoto' : '') + '" href="/small/' + galleryName + '/' + fileName + '" onclick="return show(\'' + fileId++ + '\')">' +
                   '<img src="/thumb/' + galleryName + '/' + fileName + '" alt="" /></a>'
-          } else if (files[i].slice(-4) === '.mov') {
+          } else if (files[i].slice(-4).toLowerCase() === '.mov') {
             let isLivephoto = (parseInt(i) > 0) && (files[i] === (files[parseInt(i) - 1].slice(0, -5) + '.mov'))
             if(!isLivephoto) {
               content += '<a class="thumb" href="/original/' + galleryName + '/' + files[i] + '">' +
