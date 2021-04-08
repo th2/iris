@@ -180,7 +180,7 @@ async function getCachePath(filePath, fileName, kindPath, kindSize) {
   console.log('createCacheFile ' + originalPath + '>' + thumbPath)
   try {
     fs.mkdirSync(path.dirname(thumbPath), { recursive: true })
-    if(originalPath.substr(-4).toLowerCase() == '.mov') {
+    if(originalPath.substr(-4).toLowerCase() == '.mov' || originalPath.substr(-4).toLowerCase() == '.mp4') {
       new ffmpeg(originalPath)
         .screenshot({
             count: 1,

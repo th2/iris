@@ -141,6 +141,10 @@ module.exports.sendGallery = function (res, userName, galleryName) {
               '<i class="mdi mdi-play-circle-outline mdi-light overlaycenter"></i>' +
               '<img src="/thumb/' + galleryName + '/' + files[i] + '" alt="" /></a>'
             }
+          } else if (files[i].slice(-4).toLowerCase() === '.mp4') {
+            content += '<a class="thumb" href="/original/' + galleryName + '/' + files[i] + '">' +
+            '<i class="mdi mdi-play-circle-outline mdi-light overlaycenter"></i>' +
+            '<img src="/thumb/' + galleryName + '/' + files[i] + '" alt="" /></a>'
           } else {
             content += '<a class="thumb" href="/original/' + galleryName + '/' + files[i] + '">' + files[i] + '</a>'
           }
