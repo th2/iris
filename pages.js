@@ -122,7 +122,7 @@ module.exports.sendGallery = function (res, userName, galleryName) {
         for (var i in files) {
           if (files[i].substring(0, 1) === '.') {
 
-          } else if (files[i].slice(-4).toLowerCase() === '.jpg' || files[i].slice(-5) === '.jpeg') {
+          } else if (files[i].slice(-4).toLowerCase() === '.jpg' || files[i].slice(-5) === '.jpeg' || files[i].slice(-4) === '.png') {
             fileNames += "'" + files[i] + "', "
             content += '<a class="thumb" href="/small/' + galleryName + '/' + files[i] + '" onclick="return show(\'' + fileId++ + '\')">' +
                   '<img src="/thumb/' + galleryName + '/' + files[i] + '" alt="" /></a>'
